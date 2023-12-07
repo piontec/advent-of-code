@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::DayTask;
 
 pub struct Day1;
@@ -34,19 +35,57 @@ impl DayTask for Day1 {
     }
 
     fn run_p2(&self, lines: Vec<String>) -> i32 {
-        self.run_p1(
-            lines.iter().map(|l| l
-                .replace("one", "1")
-                .replace("two", "2")
-                .replace("three", "3")
-                .replace("four", "4")
-                .replace("five", "5")
-                .replace("six", "6")
-                .replace("seven", "7")
-                .replace("eight", "8")
-                .replace("nine", "9")
-            ).collect()
-        )
+        let digits: HashMap<&str, &str> = HashMap::from([
+                        ("one", "1"),
+                        ("two", "2"),
+                        ("three", "3"),
+                        ("four", "4"),
+                        ("five", "5"),
+                        ("six", "6"),
+                        ("seven", "7"),
+                        ("eight", "8"),
+                        ("nine", "9"),
+        ]);
+
+        let modified_lines = lines.iter().map(|l| {
+            let mut line = l.to_string();
+
+            let mut found_index: Option<usize> = Option::None;
+            let mut found_key: Option<&str> = Option::None;
+            for (key, _value) in &digits {
+                match line.find(key) {
+                    Some(index) => {
+                        if found_index.is_none() || index < found_index.unwrap() {
+                            found_index = Some(index);
+                            found_key = Some(key);
+                        }
+                    },
+                    None => {}
+                }
+            }
+            if found_key.is_some() {
+                line = line.replacen(found_key.unwrap(), digits[found_key.unwrap()], 1);
+            }
+
+            found_index = Option::None;
+            found_key = Option::None;
+            for (key, _value) in &digits {
+                match line.rfind(key) {
+                    Some(index) => {
+                        if found_index.is_none() || index > found_index.unwrap() {
+                            found_index = Some(index);
+                            found_key = Some(key);
+                        }
+                    },
+                    None => {}
+                }
+            }
+            if found_key.is_some() {
+                line = line.replace(found_key.unwrap(), digits[found_key.unwrap()]);
+            }
+            line.to_string()
+        }).collect();
+        self.run_p1(modified_lines)
     }
 
 }

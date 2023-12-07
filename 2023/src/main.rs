@@ -10,8 +10,8 @@ pub trait DayTask {
     	println!("[test: {}ms]", now.elapsed().as_millis());
         let lines = self.read_lines(format!("d{day}.txt").as_str());
     	let now = Instant::now();
-    	println!("[main: {}ms]", now.elapsed().as_millis());
         println!("{}", self.run_p1(lines));
+    	println!("[main: {}ms]", now.elapsed().as_millis());
 
         println!("[[Day {day} - part 2]]");
     	let now = Instant::now();
@@ -19,8 +19,8 @@ pub trait DayTask {
     	println!("[test: {}ms]", now.elapsed().as_millis());
         let lines = self.read_lines(format!("d{day}.txt").as_str());
     	let now = Instant::now();
-    	println!("[main: {}ms]", now.elapsed().as_millis());
         println!("{}", self.run_p2(lines));
+    	println!("[main: {}ms]", now.elapsed().as_millis());
     }
 
     fn read_lines(&self, filename: &str) -> Vec<String> {
