@@ -63,6 +63,10 @@ impl DayTask for Day1 {
                     None => {}
                 }
             }
+            let digit_index = line.chars().position(|c| c.is_numeric());
+            if digit_index.is_some() && found_index.is_some() && digit_index.unwrap() < found_index.unwrap() {
+                found_key = Option::None;
+            }
             if found_key.is_some() {
                 line = line.replacen(found_key.unwrap(), digits[found_key.unwrap()], 1);
             }
