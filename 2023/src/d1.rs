@@ -3,7 +3,7 @@ use crate::DayTask;
 
 pub struct Day1;
 
-impl DayTask for Day1 {
+impl DayTask<i32> for Day1 {
     fn get_part1_test_input(&self) -> &'static str {
         "1abc2
     pqr3stu8vwx

@@ -1,8 +1,9 @@
 mod d1;
 use std::fs::read_to_string;
 use std::time::Instant;
+use std::fmt::{Debug, Display};
 
-pub trait DayTask {
+pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
     fn main(&self, day: u8) {
         println!("[[Day {day} - part 1]]");
     	let now = Instant::now();
@@ -39,13 +40,13 @@ pub trait DayTask {
 
     fn get_part2_test_input(&self) -> &'static str;
 
-    fn get_part1_test_result(&self) -> i32;
+    fn get_part1_test_result(&self) -> T;
 
-    fn get_part2_test_result(&self) -> i32;
+    fn get_part2_test_result(&self) -> T;
 
-    fn run_p1(&self, lines: Vec<String>) -> i32;
+    fn run_p1(&self, lines: Vec<String>) -> T;
 
-    fn run_p2(&self, lines: Vec<String>) -> i32;
+    fn run_p2(&self, lines: Vec<String>) -> T;
 }
 
 fn main() {
