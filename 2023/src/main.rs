@@ -1,10 +1,14 @@
 mod d1;
+mod d2;
 use std::fs::read_to_string;
 use std::time::Instant;
 use std::fmt::{Debug, Display};
 
 pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
-    fn main(&self, day: u8) {
+    fn day_no(&self) -> u8;
+
+    fn main(&self) {
+        let day = self.day_no();
         println!("[[Day {day} - part 1]]");
     	let now = Instant::now();
     	assert_eq!(self.run_p1(self.get_test_data(self.get_part1_test_input())), self.get_part1_test_result());
@@ -50,5 +54,6 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
 }
 
 fn main() {
-    d1::Day1.main(1);
+    d1::Day1.main();
+    d2::Day2.main();
 }

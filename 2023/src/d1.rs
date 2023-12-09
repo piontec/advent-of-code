@@ -92,6 +92,10 @@ impl DayTask<i32> for Day1 {
         self.run_p1(modified_lines)
     }
 
+    fn day_no(&self) -> u8 {
+        1
+    }
+
 }
 
 impl Day1 {
