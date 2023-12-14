@@ -1,9 +1,9 @@
 mod d1;
 mod d2;
 mod d3;
+use std::fmt::{Debug, Display};
 use std::fs::read_to_string;
 use std::time::Instant;
-use std::fmt::{Debug, Display};
 
 pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
     fn day_no(&self) -> u8;
@@ -11,22 +11,28 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
     fn main(&self) {
         let day = self.day_no();
         println!("[[Day {day} - part 1]]");
-    	let now = Instant::now();
-    	assert_eq!(self.run_p1(self.get_test_data(self.get_part1_test_input())), self.get_part1_test_result());
-    	println!("[test: {}ms]", now.elapsed().as_millis());
+        let now = Instant::now();
+        assert_eq!(
+            self.run_p1(self.get_test_data(self.get_part1_test_input())),
+            self.get_part1_test_result()
+        );
+        println!("[test: {}ms]", now.elapsed().as_millis());
         let lines = self.read_lines(format!("d{day}.txt").as_str());
-    	let now = Instant::now();
+        let now = Instant::now();
         println!("{}", self.run_p1(lines));
-    	println!("[main: {}ms]", now.elapsed().as_millis());
+        println!("[main: {}ms]", now.elapsed().as_millis());
 
         println!("[[Day {day} - part 2]]");
-    	let now = Instant::now();
-    	assert_eq!(self.run_p2(self.get_test_data(self.get_part2_test_input())), self.get_part2_test_result());
-    	println!("[test: {}ms]", now.elapsed().as_millis());
+        let now = Instant::now();
+        assert_eq!(
+            self.run_p2(self.get_test_data(self.get_part2_test_input())),
+            self.get_part2_test_result()
+        );
+        println!("[test: {}ms]", now.elapsed().as_millis());
         let lines = self.read_lines(format!("d{day}.txt").as_str());
-    	let now = Instant::now();
+        let now = Instant::now();
         println!("{}", self.run_p2(lines));
-    	println!("[main: {}ms]", now.elapsed().as_millis());
+        println!("[main: {}ms]", now.elapsed().as_millis());
     }
 
     fn read_lines(&self, filename: &str) -> Vec<String> {
@@ -55,7 +61,7 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
 }
 
 fn main() {
-    d1::Task.main();
-    d2::Task.main();
-    // d3::Day3.main();
+    // d1::Task.main();
+    // d2::Task.main();
+    d3::Task.main();
 }
