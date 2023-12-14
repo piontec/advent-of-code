@@ -1,9 +1,14 @@
 use crate::DayTask;
 use std::collections::HashMap;
 
-pub struct DayN;
+pub struct Task;
 
-impl DayTask<i32> for DayN {
+impl DayTask<i32> for Task {
+
+    fn day_no(&self) -> u8 {
+        todo!()
+    }
+
     fn get_part1_test_input(&self) -> &'static str {
         ""
     }
@@ -28,7 +33,4 @@ impl DayTask<i32> for DayN {
         todo!()
     }
 
-    fn day_no(&self) -> u8 {
-        todo!()
-    }
 }

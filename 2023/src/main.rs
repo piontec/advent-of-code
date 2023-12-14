@@ -1,5 +1,6 @@
 mod d1;
 mod d2;
+mod d3;
 use std::fs::read_to_string;
 use std::time::Instant;
 use std::fmt::{Debug, Display};
@@ -54,6 +55,7 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
 }
 
 fn main() {
-    d1::Day1.main();
-    d2::Day2.main();
+    d1::Task.main();
+    d2::Task.main();
+    // d3::Day3.main();
 }

@@ -1,9 +1,14 @@
 use std::collections::HashMap;
 use crate::DayTask;
 
-pub struct Day1;
+pub struct Task;
 
-impl DayTask<i32> for Day1 {
+impl DayTask<i32> for Task {
+
+    fn day_no(&self) -> u8 {
+        1
+    }
+
     fn get_part1_test_input(&self) -> &'static str {
         "1abc2
     pqr3stu8vwx
@@ -91,14 +96,9 @@ impl DayTask<i32> for Day1 {
         }).collect();
         self.run_p1(modified_lines)
     }
-
-    fn day_no(&self) -> u8 {
-        1
-    }
-
 }
 
-impl Day1 {
+impl Task {
     fn find_numbers(&self, line: &String) -> i32 {
         let digits: Vec<i32> = line
             .chars()
