@@ -1,14 +1,10 @@
+use std::collections::HashMap;
+
 use crate::DayTask;
 
 pub struct Task;
 
-impl DayTask<usize> for Task {
-    fn day_no(&self) -> u8 {
-        3
-    }
-
-    fn get_part1_test_input(&self) -> &'static str {
-        "467..114..
+const TI: &str = "467..114..
 ...*......
 ..35..633.
 ......#...
@@ -17,11 +13,19 @@ impl DayTask<usize> for Task {
 ..592.....
 ......755.
 ...$.*....
-.664.598.."
+.664.598..";
+
+impl DayTask<usize> for Task {
+    fn day_no(&self) -> u8 {
+        3
+    }
+
+    fn get_part1_test_input(&self) -> &'static str {
+        TI
     }
 
     fn get_part2_test_input(&self) -> &'static str {
-        todo!()
+        TI
     }
 
     fn get_part1_test_result(&self) -> usize {
@@ -29,7 +33,7 @@ impl DayTask<usize> for Task {
     }
 
     fn get_part2_test_result(&self) -> usize {
-        todo!()
+        467835
     }
 
     fn run_p1(&self, lines: Vec<String>) -> usize {
@@ -45,10 +49,28 @@ impl DayTask<usize> for Task {
     }
 
     fn run_p2(&self, lines: Vec<String>) -> usize {
-        todo!()
+        // 84883664
+        let mut result = 0;
+        let mut gears: HashMap<Position, Vec<SymbolNum>> = HashMap::new();
+        for numpos in get_numpos(&lines) {
+            if numpos.symbol.is_some_and(|s| s == '*') {
+                if !gears.contains_key(&numpos.position) {
+                    gears.insert(numpos.position, Vec::new());
+                }
+                gears.get_mut(&numpos.position).unwrap().push(numpos);
+            }
+        }
+        for (_, v) in gears.iter() {
+            if v.len() != 2 {
+                continue;
+            }
+            result += v[0].num * v[1].num;
+        }
+        result
     }
 }
 
+#[derive(Eq, PartialEq, Hash, Copy, Clone)]
 struct Position {
     line_index: usize,
     char_index: usize,
@@ -65,7 +87,7 @@ fn get_numpos(lines: &Vec<String>) -> Vec<SymbolNum> {
 
     for (li, line) in lines.iter().enumerate() {
         let mut digit_start_index: Option<usize> = Option::None;
-        let mut digit_end_index = 0;
+        let mut digit_end_index;
         for (i, c) in line.chars().enumerate() {
             if c.is_digit(10) && digit_start_index.is_none() {
                 digit_start_index = Option::Some(i);
