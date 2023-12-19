@@ -20,7 +20,7 @@ impl DayTask<i32> for Task {
     }
 
     fn get_part2_test_input(&self) -> &'static str {
-        todo!()
+        TI
     }
 
     fn get_part1_test_result(&self) -> i32 {
@@ -28,28 +28,48 @@ impl DayTask<i32> for Task {
     }
 
     fn get_part2_test_result(&self) -> i32 {
-        todo!()
+        30
     }
 
     fn run_p1(&self, lines: Vec<String>) -> i32 {
         let mut total = 0;
         for line in lines {
-            let (left, right) = line.split_once(" | ").unwrap();
-            let left = left.split_once(": ").unwrap().1;
-            let left_set: HashSet<i32> =
-                HashSet::from_iter(left.split(" ").filter(|s| !s.is_empty()).map(|s| s.parse::<i32>().unwrap()));
-            let right_set: HashSet<i32> =
-                HashSet::from_iter(right.split(" ").filter(|s| !s.is_empty()).map(|s| s.parse::<i32>().unwrap()));
-            let common_len = left_set.intersection(&right_set).count() as u32;
-            if common_len > 0 {
+            let match_nums_count = get_winning_numbers(&line);
+            if match_nums_count > 0 {
                 let base: i32 = 2;
-                total += base.pow(common_len - 1);
+                total += base.pow(match_nums_count - 1);
             }
         }
         total
     }
 
     fn run_p2(&self, lines: Vec<String>) -> i32 {
-        todo!()
+        let mut counts = vec![1; lines.len()];
+        for (idx, line) in lines.iter().enumerate() {
+            let match_nums_count = get_winning_numbers(line);
+            let card_count = counts[idx];
+            for i in idx + 1..=idx + match_nums_count as usize {
+                counts[i] += card_count;
+            }
+        }
+        counts.iter().sum()
     }
+}
+
+fn get_winning_numbers(line: &String) -> u32 {
+    let (left, right) = line.split_once(" | ").unwrap();
+    let left = left.split_once(": ").unwrap().1;
+    let left_set: HashSet<i32> = HashSet::from_iter(
+        left.split(" ")
+            .filter(|s| !s.is_empty())
+            .map(|s| s.parse::<i32>().unwrap()),
+    );
+    let right_set: HashSet<i32> = HashSet::from_iter(
+        right
+            .split(" ")
+            .filter(|s| !s.is_empty())
+            .map(|s| s.parse::<i32>().unwrap()),
+    );
+    let common_len = left_set.intersection(&right_set).count() as u32;
+    common_len
 }
