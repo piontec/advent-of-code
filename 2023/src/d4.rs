@@ -1,5 +1,5 @@
 use crate::DayTask;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 pub struct Task;
 

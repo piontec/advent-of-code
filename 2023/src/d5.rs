@@ -1,5 +1,5 @@
 use crate::DayTask;
-use std::{collections::HashMap, vec};
+use std::{collections::{HashMap, HashSet}, vec};
 
 pub struct Task;
 
@@ -95,7 +95,8 @@ impl DayTask<i64> for Task {
 }
 
 fn find_loc_range(orig_range: Range, maps: &HashMap<&str, HashMap<Range, i64>>) -> u64 {
-    let mut ranges_to_check = vec![orig_range];
+    let mut ranges_to_check = HashSet::new();
+    ranges_to_check.insert(orig_range);
     for step in vec![
         "seed-to-soil",
         "soil-to-fertilizer",
@@ -106,51 +107,52 @@ fn find_loc_range(orig_range: Range, maps: &HashMap<&str, HashMap<Range, i64>>) 
         "humidity-to-location",
     ] {
         let map = maps.get(step).unwrap();
-        let mut new_ranges = vec![];
+        let mut new_ranges = HashSet::new();
         while ! ranges_to_check.is_empty() {
-            let range = ranges_to_check.pop().unwrap();
+            let range = ranges_to_check.iter().next().cloned().unwrap();
+            ranges_to_check.remove(&range);
             for (map_range, offset) in map.iter() {
                 // we have to check 5 cases:
                 // - range entirely within map_range,
                 if range.min >= map_range.min && range.max <= map_range.max {
-                    new_ranges.push(Range {
+                    new_ranges.insert(Range {
                         min: (range.min as i64 + offset) as u64,
                         max: (range.max as i64 + offset) as u64,
                     });
                 }
                 // - map_range entirely within range,
                 else if range.min < map_range.min && range.max > map_range.max {
-                    ranges_to_check.push(Range {
+                    ranges_to_check.insert(Range {
                         min: range.min,
                         max: map_range.min,
                     });
-                    new_ranges.push(Range {
+                    new_ranges.insert(Range {
                         min: (map_range.min as i64 + offset) as u64,
                         max: (map_range.max as i64 + offset) as u64,
                     });
-                    ranges_to_check.push(Range {
+                    ranges_to_check.insert(Range {
                         min: map_range.max,
                         max: range.max,
                     });
                 }
                 // - right side of range overlaps with map_range,
                 else if range.min < map_range.min && range.max > map_range.min {
-                    ranges_to_check.push(Range {
+                    ranges_to_check.insert(Range {
                         min: range.min,
                         max: map_range.min,
                     });
-                    new_ranges.push(Range {
+                    new_ranges.insert(Range {
                         min: (map_range.min as i64 + offset) as u64,
                         max: (range.max as i64 + offset) as u64,
                     });
                 }
                 // - left side of range overlaps with map_range,
                 else if range.min < map_range.max && range.max > map_range.max {
-                    new_ranges.push(Range {
+                    new_ranges.insert(Range {
                         min: (range.min as i64 + offset) as u64,
                         max: (map_range.max as i64 + offset) as u64,
                     });
-                    ranges_to_check.push(Range {
+                    ranges_to_check.insert(Range {
                         min: map_range.max,
                         max: range.max,
                     });
@@ -158,7 +160,7 @@ fn find_loc_range(orig_range: Range, maps: &HashMap<&str, HashMap<Range, i64>>) 
             }
             // range is outside of map_range
             if new_ranges.is_empty() {
-                new_ranges.push(Range { ..range });
+                new_ranges.insert(Range { ..range });
             }
         }
         ranges_to_check = new_ranges;
@@ -220,7 +222,7 @@ fn parse_maps(lines: &[String]) -> HashMap<&str, SingleMap> {
     maps
 }
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Clone)]
 struct Range {
     min: u64,
     max: u64,
