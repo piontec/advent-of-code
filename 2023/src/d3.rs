@@ -70,11 +70,11 @@ impl DayTask<usize> for Task {
     }
 
     fn get_part1_result(&self) -> Option<usize> {
-        None
+        Some(537732)
     }
 
     fn get_part2_result(&self) -> Option<usize> {
-        None
+        Some(84883664)
     }
 }
 

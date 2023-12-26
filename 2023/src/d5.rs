@@ -94,11 +94,11 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(510109797)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(9622622)
     }
 }
 
