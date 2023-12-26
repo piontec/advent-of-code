@@ -31,7 +31,7 @@ impl DayTask<i32> for Task {
     }
 
 
-    fn run_p1(&self, lines: Vec<String>) -> i32 {
+    fn run_p1(&self, lines: &Vec<String>) -> i32 {
         let games = self.parse(lines);
         let target = Subset {
             green: 13,
@@ -44,7 +44,7 @@ impl DayTask<i32> for Task {
         result
     }
 
-    fn run_p2(&self, lines: Vec<String>) -> i32 {
+    fn run_p2(&self, lines: &Vec<String>) -> i32 {
         let games = self.parse(lines);
         let powers = games.iter().map(|g| {
             let mut max_green = 0;
@@ -67,6 +67,13 @@ impl DayTask<i32> for Task {
         powers.iter().sum()
     }
 
+    fn get_part1_result(&self) -> Option<i32> {
+        None
+    }
+
+    fn get_part2_result(&self) -> Option<i32> {
+        None
+    }
 }
 
 struct Subset {
@@ -87,7 +94,7 @@ struct Game {
 }
 
 impl Task {
-    fn parse(&self, lines: Vec<String>) -> Vec<Game> {
+    fn parse(&self, lines: &Vec<String>) -> Vec<Game> {
         let mut games: Vec<Game> = Vec::new();
         for line in lines {
             let main_parts = line.split(":").collect::<Vec<&str>>();

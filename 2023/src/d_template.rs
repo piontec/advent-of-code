@@ -35,4 +35,11 @@ impl DayTask<i32> for Task {
         todo!()
     }
 
+    fn get_part1_result(&self) -> Option<i32> {
+        None
+    }
+
+    fn get_part2_result(&self) -> Option<i32> {
+        None
+    }
 }

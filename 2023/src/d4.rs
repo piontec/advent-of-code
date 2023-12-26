@@ -31,7 +31,7 @@ impl DayTask<i32> for Task {
         30
     }
 
-    fn run_p1(&self, lines: Vec<String>) -> i32 {
+    fn run_p1(&self, lines: &Vec<String>) -> i32 {
         let mut total = 0;
         for line in lines {
             let match_nums_count = get_winning_numbers(&line);
@@ -43,7 +43,7 @@ impl DayTask<i32> for Task {
         total
     }
 
-    fn run_p2(&self, lines: Vec<String>) -> i32 {
+    fn run_p2(&self, lines: &Vec<String>) -> i32 {
         let mut counts = vec![1; lines.len()];
         for (idx, line) in lines.iter().enumerate() {
             let match_nums_count = get_winning_numbers(line);
@@ -53,6 +53,14 @@ impl DayTask<i32> for Task {
             }
         }
         counts.iter().sum()
+    }
+
+    fn get_part1_result(&self) -> Option<i32> {
+        None
+    }
+
+    fn get_part2_result(&self) -> Option<i32> {
+        None
     }
 }
 

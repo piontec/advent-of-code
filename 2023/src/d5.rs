@@ -58,7 +58,7 @@ impl DayTask<i64> for Task {
         46
     }
 
-    fn run_p1(&self, lines: Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>) -> i64 {
         let maps = parse_maps(&lines[1..]);
 
         lines[0]
@@ -72,7 +72,7 @@ impl DayTask<i64> for Task {
             .unwrap() as i64
     }
 
-    fn run_p2(&self, lines: Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>) -> i64 {
         let maps = parse_maps(&lines[1..]);
         let seeds = lines[0]
             .split(":")
@@ -91,6 +91,14 @@ impl DayTask<i64> for Task {
             .min()
             .unwrap() as i64;
         seeds
+    }
+
+    fn get_part1_result(&self) -> Option<i64> {
+        None
+    }
+
+    fn get_part2_result(&self) -> Option<i64> {
+        None
     }
 }
 

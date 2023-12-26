@@ -35,11 +35,11 @@ impl DayTask<i32> for Task {
     }
 
 
-    fn run_p1(&self, lines: Vec<String>) -> i32 {
+    fn run_p1(&self, lines: &Vec<String>) -> i32 {
         lines.iter().map(|l| self.find_numbers(l)).fold(0, |sum, num| sum + num)
     }
 
-    fn run_p2(&self, lines: Vec<String>) -> i32 {
+    fn run_p2(&self, lines: &Vec<String>) -> i32 {
         let digits: HashMap<&str, &str> = HashMap::from([
                         ("one", "1"),
                         ("two", "2"),
@@ -92,9 +92,17 @@ impl DayTask<i32> for Task {
             if found_key.is_some() {
                 line = line.replace(found_key.unwrap(), digits[found_key.unwrap()]);
             }
-            line.to_string()
+            line
         }).collect();
-        self.run_p1(modified_lines)
+        self.run_p1(&modified_lines)
+    }
+
+    fn get_part1_result(&self) -> Option<i32> {
+        None
+    }
+
+    fn get_part2_result(&self) -> Option<i32> {
+        None
     }
 }
 
