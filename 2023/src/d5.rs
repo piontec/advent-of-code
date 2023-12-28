@@ -1,5 +1,10 @@
 use crate::DayTask;
-use std::{collections::{HashMap, HashSet}, vec};
+use crossbeam_channel::unbounded;
+use std::thread;
+use std::{
+    collections::{HashMap, HashSet},
+    vec,
+};
 
 pub struct Task;
 
@@ -74,7 +79,7 @@ impl DayTask<i64> for Task {
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
         let maps = parse_maps(&lines[1..]);
-        let seeds = lines[0]
+        let ranges: Vec<Range> = lines[0]
             .split(":")
             .last()
             .unwrap()
@@ -87,10 +92,44 @@ impl DayTask<i64> for Task {
                 min: c[0],
                 max: c[0] + c[1],
             })
-            .map(|range| find_loc_range(range, &maps))
-            .min()
-            .unwrap() as i64;
-        seeds
+            .collect();
+
+        let mut min = u64::MAX;
+        let range_len = ranges.len();
+        let (tx_req, rx_req) = unbounded();
+        let (tx_resp, rx_resp) = unbounded();
+        let maps_ref = &maps;
+        thread::scope(|scope| {
+            for _ in 0..4 {
+                let rx_req = rx_req.clone();
+                let tx_resp = tx_resp.clone();
+                scope.spawn(move || {
+                    loop {
+                        match rx_req.recv() {
+                            Ok(range) => {
+                                let res = find_loc_range(range, maps_ref);
+                                tx_resp.send(res).unwrap();
+                            }
+                            Err(_) => break,
+                        }
+                    }
+                });
+            }
+            drop(tx_resp);
+
+            for r in ranges {
+                tx_req.send(r).unwrap()
+            }
+            drop(tx_req);
+
+            for _ in 0..range_len {
+                let res = rx_resp.recv().unwrap();
+                if res < min {
+                    min = res;
+                }
+            }
+        });
+        min as i64
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -116,7 +155,7 @@ fn find_loc_range(orig_range: Range, maps: &HashMap<&str, HashMap<Range, i64>>) 
     ] {
         let map = maps.get(step).unwrap();
         let mut new_ranges = HashSet::new();
-        while ! ranges_to_check.is_empty() {
+        while !ranges_to_check.is_empty() {
             let range = ranges_to_check.iter().next().cloned().unwrap();
             ranges_to_check.remove(&range);
             for (map_range, offset) in map.iter() {
