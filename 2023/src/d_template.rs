@@ -27,11 +27,11 @@ impl DayTask<i32> for Task {
         todo!()
     }
 
-    fn run_p1(&self, lines: Vec<String>) -> i32 {
+    fn run_p1(&self, &lines: Vec<String>) -> i32 {
         todo!()
     }
 
-    fn run_p2(&self, lines: Vec<String>) -> i32 {
+    fn run_p2(&self, &lines: Vec<String>) -> i32 {
         todo!()
     }
 
