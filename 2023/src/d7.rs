@@ -158,7 +158,7 @@ fn get_hand_type_with_jokers(cards: &mut HashMap<char, u32>) -> HandType {
 }
 
 fn get_hand_type(cards: &HashMap<char, u32>) -> HandType {
-    if cards.len() == 1 {
+    if cards.values().any(|c| *c == 5) {
         return HandType::FiveOfAKind;
     }
     if cards.values().any(|c| *c == 4) {
