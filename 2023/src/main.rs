@@ -5,6 +5,7 @@ mod d4;
 mod d5;
 mod d6;
 mod d7;
+mod d8;
 use std::fmt::{Debug, Display};
 use std::fs::read_to_string;
 use std::time::Instant;
@@ -83,5 +84,6 @@ fn main() {
     // d4::Task.main();
     // d5::Task.main();
     // d6::Task.main();
-    d7::Task.main();
+    // d7::Task.main();
+    d8::Task.main();
 }
