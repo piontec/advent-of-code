@@ -2,7 +2,6 @@ use crate::common::Point2D;
 use crate::DayTask;
 use core::panic;
 use std::collections::HashMap;
-use std::hash::Hash;
 
 pub struct Task;
 
@@ -62,15 +61,13 @@ impl DayTask<i32> for Task {
                                 wall_count += 1;
                             }
                         }
-                        '-' => { }
+                        '-' => {}
                         '|' => {
                             wall_count += 1;
                         }
                         _ => panic!("Invalid character"),
-                        
                     }
-                }
-                else if wall_count % 2 == 1 {
+                } else if wall_count % 2 == 1 {
                     in_counter += 1;
                 }
             }
@@ -84,7 +81,7 @@ impl DayTask<i32> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i32> {
-        None
+        Some(349)
     }
 }
 
