@@ -44,7 +44,7 @@ impl DayTask<i32> for Task {
             let mut wall_count = 0;
             let mut horizontal_start = None;
             for x in 0..lines[y].len() {
-                let p = Point2D::new(x, y);
+                let p = Point2D::new(x as isize, y as isize);
                 if path.contains_key(&p) {
                     let path_element = path.get(&p).unwrap();
                     match path_element {
@@ -85,24 +85,24 @@ impl DayTask<i32> for Task {
     }
 }
 
-fn get_path(lines: &Vec<String>) -> HashMap<Point2D<usize>, char> {
+fn get_path(lines: &Vec<String>) -> HashMap<Point2D<isize>, char> {
     let mut s = Point2D::new(0, 0);
     for li in 0..lines.len() {
         let l = &lines[li];
         if l.contains("S") {
-            s = Point2D::new(l.find("S").unwrap(), li);
+            s = Point2D::new(l.find("S").unwrap() as isize, li as isize);
             break;
         }
     }
     let mut current = Point2D::new(s.x + 1, s.y);
     let mut prev = s.clone();
     // I checked and in all cases 'S' is 'F'
-    let mut path: HashMap<Point2D<usize>, char> = HashMap::new();
+    let mut path: HashMap<Point2D<isize>, char> = HashMap::new();
     path.insert(s, 'F');
 
     loop {
         // assuming going clockwise
-        let current_symbol = lines[current.y].chars().nth(current.x).unwrap();
+        let current_symbol = lines[current.y as usize].chars().nth(current.x as usize).unwrap();
         let next_pos = match current_symbol {
             'F' => {
                 // we come from south
