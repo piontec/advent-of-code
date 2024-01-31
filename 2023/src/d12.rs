@@ -3,16 +3,21 @@ use std::collections::HashMap;
 
 pub struct Task;
 
-const TI: &str = "";
+const TI: &str = "???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1";
 
 impl DayTask<i64> for Task {
 
     fn day_no(&self) -> u8 {
-        todo!()
+        12
     }
 
     fn get_part1_test_input(&self) -> &'static str {
-        TI
+        21
     }
 
     fn get_part2_test_input(&self) -> &'static str {
