@@ -18,3 +18,15 @@ where T: Signed + Copy {
         return (self.x - destination.x).abs() + (self.y - destination.y).abs();
     }
 }
+
+pub fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
+    let mut result = Vec::<Vec<T>>::new();
+    for x in 0..array2d[0].len() {
+        let mut row = Vec::<T>::new();
+        for y in 0..array2d.len() {
+            row.push(array2d[y][x].clone());
+        }
+        result.push(row);
+    }
+    result
+}

@@ -1,4 +1,5 @@
 use crate::DayTask;
+use crate::common::transpose;
 
 pub struct Task;
 
@@ -41,12 +42,14 @@ impl DayTask<i64> for Task {
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
         let maps = split_maps(lines);
-        let res: usize = maps.iter().map(|map| check_both(map)).sum();
+        let res: usize = maps.iter().map(|map| check_both(map, None).unwrap()).sum();
         res as i64
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
-        0
+        let maps = split_maps(lines);
+        let res: usize = maps.iter().map(|map| check_smudge(map)).sum();
+        res as i64
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -58,10 +61,19 @@ impl DayTask<i64> for Task {
     }
 }
 
-fn check_both(map: &[String]) -> usize {
-    let mut res = find_reflection(map);
+fn check_smudge(map: &[String]) -> usize {
+    let first = check_both(map, None);
+    if first.is_none() {
+        panic!("No solution found for original map");
+    }
+    let res = check_both(map, first);
+    return res.unwrap();
+}
+
+fn check_both(map: &[String], to_ignore: Option<usize>) -> Option<usize> {
+    let mut res = find_reflection(map, to_ignore);
     if res.is_some() {
-        return res.unwrap();
+        return res;
     }
     let char_map = &map.iter()
         .map(|s| s.chars().collect::<Vec<char>>())
@@ -70,45 +82,34 @@ fn check_both(map: &[String]) -> usize {
     let ts = transposed.iter()
         .map(|s| s.iter().collect::<String>())
         .collect::<Vec<String>>();
-    res = find_reflection(&ts);
+    res = find_reflection(&ts, to_ignore);
     if res.is_none() {
-        panic!("No reflection found");
+        return res;
     }
-    res.unwrap() * 100
+    Some(res.unwrap() * 100)
 }
 
-fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
-    let mut result = Vec::<Vec<T>>::new();
-    for x in 0..array2d[0].len() {
-        let mut row = Vec::<T>::new();
-        for y in 0..array2d.len() {
-            row.push(array2d[y][x].clone());
-        }
-        result.push(row);
-    }
-    result
-}
-
-fn find_reflection(map: &[String]) -> Option<usize> {
+fn find_reflection(map: &[String], to_ignore: Option<usize>) -> Option<usize> {
     let max_x = map[0].len();
     let max_y = map.len();
 
     for x in 0..max_x - 1{
         let mut offset: isize = 0;
-        let mut symmetric = true;
+        let mut diff = usize::MAX;
         let mut left = x as isize - offset;
         let mut right = x as isize + 1 + offset;
         while left >= 0 && (right as usize) < max_x {
-            symmetric = (0..max_y)
-                .all(|y| map[y].chars().nth(left as usize) == map[y].chars().nth(right as usize));
-            if !symmetric {
+            diff = (0..max_y)
+                .map(|y| if map[y].chars().nth(left as usize) == map[y].chars().nth(right as usize) {0} else {1})
+                .sum();
+            if diff > 0 {
                 break;
             }
             offset += 1;
             left = x as isize - offset;
             right = x as isize + 1 + offset;
         }
-        if symmetric {
+        if diff == 0 && !(to_ignore.is_some() && to_ignore.unwrap() == x) {
             return Some(x + 1);
         }
     }
