@@ -98,18 +98,26 @@ fn find_reflection(map: &[String], to_ignore: Option<usize>) -> Option<usize> {
         let mut diff = usize::MAX;
         let mut left = x as isize - offset;
         let mut right = x as isize + 1 + offset;
+        let mut used_one_diff = false;
         while left >= 0 && (right as usize) < max_x {
             diff = (0..max_y)
                 .map(|y| if map[y].chars().nth(left as usize) == map[y].chars().nth(right as usize) {0} else {1})
                 .sum();
-            if diff > 0 {
+            if diff > 0 && (used_one_diff || to_ignore.is_none()) {
+                break;
+            }
+            if diff == 1 && to_ignore.is_some() && !used_one_diff {
+                used_one_diff = true;
+                diff = 0;
+            }
+            else if diff > 0 {
                 break;
             }
             offset += 1;
             left = x as isize - offset;
             right = x as isize + 1 + offset;
         }
-        if diff == 0 && !(to_ignore.is_some() && to_ignore.unwrap() == x) {
+        if diff == 0 && !(to_ignore.is_some() && to_ignore.unwrap() == x + 1) {
             return Some(x + 1);
         }
     }
