@@ -1,5 +1,5 @@
-use crate::DayTask;
 use crate::common::transpose;
+use crate::DayTask;
 
 pub struct Task;
 
@@ -18,6 +18,12 @@ const TI: &str = "#.##..##.
 #####.##.
 ..##..###
 #....#..#";
+
+#[derive(Clone,Debug)]
+struct IgnoreInfo {
+    index: usize,
+    transposed: bool,
+}
 
 impl DayTask<i64> for Task {
     fn day_no(&self) -> u8 {
@@ -42,13 +48,21 @@ impl DayTask<i64> for Task {
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
         let maps = split_maps(lines);
-        let res: usize = maps.iter().map(|map| check_both(map, None).unwrap()).sum();
+        let res: usize = maps
+            .iter()
+            .map(|map| check_both(map, None, false).unwrap())
+            .map(|ii| if ii.transposed { ii.index * 100 } else { ii.index })
+            .sum();
         res as i64
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
         let maps = split_maps(lines);
-        let res: usize = maps.iter().map(|map| check_smudge(map)).sum();
+        let res: usize = maps
+            .iter()
+            .map(|map| check_smudge(map).unwrap())
+            .map(|ii| if ii.transposed { ii.index * 100 } else { ii.index })
+            .sum();
         res as i64
     }
 
@@ -61,39 +75,67 @@ impl DayTask<i64> for Task {
     }
 }
 
-fn check_smudge(map: &[String]) -> usize {
-    let first = check_both(map, None);
+fn check_smudge(map: &[String]) -> Option<IgnoreInfo> {
+    let first = check_both(map, None, false);
     if first.is_none() {
         panic!("No solution found for original map");
     }
-    let res = check_both(map, first);
-    return res.unwrap();
+    let res = check_both(map, first, true);
+    res
 }
 
-fn check_both(map: &[String], to_ignore: Option<usize>) -> Option<usize> {
-    let mut res = find_reflection(map, to_ignore);
+fn check_both(map: &[String], to_ignore: Option<IgnoreInfo>, allow_one_off: bool) -> Option<IgnoreInfo> {
+    let ignore = if to_ignore.is_some() {
+        let ti = to_ignore.clone().unwrap();
+        if ti.transposed == false {
+            Some(ti.index)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    let mut res = find_reflection(map, ignore, allow_one_off);
     if res.is_some() {
-        return res;
+        return Some(IgnoreInfo {
+            index: res.unwrap(),
+            transposed: false,
+        });
     }
-    let char_map = &map.iter()
+    let char_map = &map
+        .iter()
         .map(|s| s.chars().collect::<Vec<char>>())
         .collect::<Vec<Vec<char>>>();
     let transposed = transpose(char_map);
-    let ts = transposed.iter()
+    let ts = transposed
+        .iter()
         .map(|s| s.iter().collect::<String>())
         .collect::<Vec<String>>();
-    res = find_reflection(&ts, to_ignore);
+    let ignore = if to_ignore.is_some() {
+        let ti = to_ignore.clone().unwrap();
+        if ti.transposed == true {
+            Some(ti.index)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    res = find_reflection(&ts, ignore, allow_one_off);
     if res.is_none() {
-        return res;
+        return None;
     }
-    Some(res.unwrap() * 100)
+    Some(IgnoreInfo {
+        index: res.unwrap(),
+        transposed: true,
+    })
 }
 
-fn find_reflection(map: &[String], to_ignore: Option<usize>) -> Option<usize> {
+fn find_reflection(map: &[String], to_ignore: Option<usize>, allow_one_off: bool) -> Option<usize> {
     let max_x = map[0].len();
     let max_y = map.len();
 
-    for x in 0..max_x - 1{
+    for x in 0..max_x - 1 {
         let mut offset: isize = 0;
         let mut diff = usize::MAX;
         let mut left = x as isize - offset;
@@ -101,16 +143,21 @@ fn find_reflection(map: &[String], to_ignore: Option<usize>) -> Option<usize> {
         let mut used_one_diff = false;
         while left >= 0 && (right as usize) < max_x {
             diff = (0..max_y)
-                .map(|y| if map[y].chars().nth(left as usize) == map[y].chars().nth(right as usize) {0} else {1})
+                .map(|y| {
+                    if map[y].chars().nth(left as usize) == map[y].chars().nth(right as usize) {
+                        0
+                    } else {
+                        1
+                    }
+                })
                 .sum();
-            if diff > 0 && (used_one_diff || to_ignore.is_none()) {
+            if diff > 0 && (used_one_diff || !allow_one_off) {
                 break;
             }
-            if diff == 1 && to_ignore.is_some() && !used_one_diff {
+            if diff == 1 && allow_one_off && !used_one_diff {
                 used_one_diff = true;
                 diff = 0;
-            }
-            else if diff > 0 {
+            } else if diff > 0 {
                 break;
             }
             offset += 1;
