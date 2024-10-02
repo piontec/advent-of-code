@@ -28,7 +28,11 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
-        todo!()
+        let res: usize = lines[0]
+            .split(",")
+            .map(|s| get_hash(s))
+            .sum();
+        res as i64
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
@@ -42,4 +46,12 @@ impl DayTask<i64> for Task {
     fn get_part2_result(&self) -> Option<i64> {
         None
     }
+}
+
+fn get_hash(s: &str) -> usize {
+    let mut res: usize = 0;
+    for c in s.chars() {
+        res = ((res + c as usize) * 17) % 256;
+    }
+    res
 }
