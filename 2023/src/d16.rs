@@ -1,15 +1,6 @@
-use crate::{common::Point2D, DayTask};
+use crate::{common::Direction, common::Point2D, DayTask};
 
 pub struct Task;
-
-#[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq)]
-enum Direction {
-    North,
-    East,
-    South,
-    West,
-}
 
 struct Beam {
     pos: Point2D<i8>,
@@ -56,10 +47,13 @@ impl DayTask<i64> for Task {
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
         let map = create_map(lines);
-        run_one(map, Beam {
-            pos: Point2D::new(0, 0),
-            dir: Direction::East,
-        })
+        run_one(
+            map,
+            Beam {
+                pos: Point2D::new(0, 0),
+                dir: Direction::East,
+            },
+        )
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
@@ -68,10 +62,17 @@ impl DayTask<i64> for Task {
 
         for y in 0..map.len() {
             for x in [0, map[0].len() - 1] {
-                let score = run_one(map.clone(), Beam {
-                    pos: Point2D::new(x as i8, y as i8),
-                    dir: if x == 0 {Direction::East} else {Direction::West},
-                });   
+                let score = run_one(
+                    map.clone(),
+                    Beam {
+                        pos: Point2D::new(x as i8, y as i8),
+                        dir: if x == 0 {
+                            Direction::East
+                        } else {
+                            Direction::West
+                        },
+                    },
+                );
                 if score > best_score {
                     best_score = score;
                 }
@@ -79,10 +80,17 @@ impl DayTask<i64> for Task {
         }
         for x in 0..map[0].len() {
             for y in [0, map.len() - 1] {
-                let score = run_one(map.clone(), Beam {
-                    pos: Point2D::new(x as i8, y as i8),
-                    dir: if y == 0 {Direction::South} else {Direction::North},
-                });   
+                let score = run_one(
+                    map.clone(),
+                    Beam {
+                        pos: Point2D::new(x as i8, y as i8),
+                        dir: if y == 0 {
+                            Direction::South
+                        } else {
+                            Direction::North
+                        },
+                    },
+                );
                 if score > best_score {
                     best_score = score;
                 }
@@ -116,10 +124,7 @@ fn create_map(lines: &Vec<String>) -> Vec<Vec<MapPosition>> {
 }
 
 fn pos_in_map(pos: &Point2D<i8>, map: &Vec<Vec<MapPosition>>) -> bool {
-    pos.x >= 0
-        && pos.y >= 0
-        && pos.y < map.len() as i8
-        && pos.x < map[0].len() as i8
+    pos.x >= 0 && pos.y >= 0 && pos.y < map.len() as i8 && pos.x < map[0].len() as i8
 }
 
 fn run_one(mut map: Vec<Vec<MapPosition>>, start: Beam) -> i64 {
@@ -138,9 +143,10 @@ fn run_one(mut map: Vec<Vec<MapPosition>>, start: Beam) -> i64 {
         // let's process the tile
         let tile = map[pos.y as usize][pos.x as usize].char;
         // case: just continue (empty or split along its way)
-        if tile == '.' 
-            || (tile == '|' && (dir == Direction::South || dir == Direction::North)) 
-            || (tile == '-' && (dir == Direction::West || dir == Direction::East)) {
+        if tile == '.'
+            || (tile == '|' && (dir == Direction::South || dir == Direction::North))
+            || (tile == '-' && (dir == Direction::West || dir == Direction::East))
+        {
             let next_pos = match dir {
                 Direction::North => Point2D::new(pos.x, pos.y - 1),
                 Direction::East => Point2D::new(pos.x + 1, pos.y),
@@ -195,16 +201,40 @@ fn run_one(mut map: Vec<Vec<MapPosition>>, start: Beam) -> i64 {
         let new_pos: Point2D<i8>;
         let new_dir = match tile {
             '/' => match dir {
-                Direction::North => {new_pos = Point2D::new(pos.x + 1, pos.y); Direction::East},
-                Direction::East => {new_pos = Point2D::new(pos.x, pos.y - 1); Direction::North},
-                Direction::South => {new_pos = Point2D::new(pos.x - 1, pos.y); Direction::West},
-                Direction::West => {new_pos = Point2D::new(pos.x, pos.y + 1); Direction::South},
+                Direction::North => {
+                    new_pos = Point2D::new(pos.x + 1, pos.y);
+                    Direction::East
+                }
+                Direction::East => {
+                    new_pos = Point2D::new(pos.x, pos.y - 1);
+                    Direction::North
+                }
+                Direction::South => {
+                    new_pos = Point2D::new(pos.x - 1, pos.y);
+                    Direction::West
+                }
+                Direction::West => {
+                    new_pos = Point2D::new(pos.x, pos.y + 1);
+                    Direction::South
+                }
             },
             '\\' => match dir {
-                Direction::North => {new_pos = Point2D::new(pos.x - 1, pos.y); Direction::West},
-                Direction::East => {new_pos = Point2D::new(pos.x, pos.y + 1); Direction::South},
-                Direction::South => {new_pos = Point2D::new(pos.x + 1, pos.y); Direction::East},
-                Direction::West => {new_pos = Point2D::new(pos.x, pos.y - 1); Direction::North},
+                Direction::North => {
+                    new_pos = Point2D::new(pos.x - 1, pos.y);
+                    Direction::West
+                }
+                Direction::East => {
+                    new_pos = Point2D::new(pos.x, pos.y + 1);
+                    Direction::South
+                }
+                Direction::South => {
+                    new_pos = Point2D::new(pos.x + 1, pos.y);
+                    Direction::East
+                }
+                Direction::West => {
+                    new_pos = Point2D::new(pos.x, pos.y - 1);
+                    Direction::North
+                }
             },
             _ => {
                 panic!("Unexpected character: {}", tile);

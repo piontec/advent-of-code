@@ -8,7 +8,7 @@ where T: Signed {
 }
 
 impl<T> Point2D<T> 
-where T: Signed + Copy {
+where T: Signed + Copy + Eq + Ord{
     pub fn new(x: T, y: T) -> Self {
         Self { x, y }
     }
@@ -17,6 +17,19 @@ where T: Signed + Copy {
     {
         return (self.x - destination.x).abs() + (self.y - destination.y).abs();
     }
+
+    pub fn in_range(&self, x_range: T, y_range: T) -> bool {
+        return self.x >= T::zero() && self.x < x_range && self.y >= T::zero() && self.y < y_range;
+    }
+}
+
+#[repr(u8)]
+#[derive(Eq, Debug, Copy, Clone, PartialEq, Hash)]
+pub enum Direction {
+    North,
+    East,
+    South,
+    West,
 }
 
 pub fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
