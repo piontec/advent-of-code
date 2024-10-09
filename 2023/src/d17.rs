@@ -2,7 +2,7 @@ use crate::{
     common::Point2D,
     DayTask,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct Task;
 
@@ -77,7 +77,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> i64 {
-        todo!()
+        94
     }
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
@@ -91,45 +91,39 @@ impl DayTask<i64> for Task {
             .collect::<Vec<Vec<u8>>>();
 
         let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
-        let mut visited_states = Vec::<State>::new();
+        let mut visited_states = HashSet::new();
         let mut to_visit_states = HashMap::from([
-            (0 as usize, vec![State::starting(0, 0, 1, 0)]),
-            (0 as usize, vec![State::starting(0, 0, 0, 1)]),
+            (map[0][1] as usize, vec![State::starting(1, 0, 1, 0)]),
+            (map[1][0] as usize, vec![State::starting(0, 1, 0, 1)]),
         ]);
 
         // upper limit on cost
         assert!(map.len() == map[0].len());
-        let mut best_solution = 0;
+        let mut upper_bound = 0;
         for i in 1..map.len() {
-            best_solution += map[i-1][i] as usize;
-            best_solution += map[i][i] as usize;
+            upper_bound += map[i-1][i] as usize;
+            upper_bound += map[i][i] as usize;
         }
         while let Some(current_state) = pop_next_to_visit_state(&mut to_visit_states) {
             // check if we're done
             if current_state.state.pos == destination {
-                if current_state.cost < best_solution {
-                    best_solution = current_state.cost;
-                }
-                continue;
+                return current_state.cost as i64;
             }
 
-            // check if we've visited this state before or if it's too expensive
-            if visited_states.contains(&current_state.state) || current_state.cost >= best_solution {
+            if !visited_states.insert(current_state.state.clone()) {
                 continue;
             }
-            visited_states.push(current_state.state.clone());
 
             // add next states to visit
             let next_states = get_next_states(&map, &current_state);
             for next_state in next_states {
-                if next_state.cost < best_solution {
+                if next_state.cost < upper_bound && !visited_states.contains(&next_state.state) {
                     add_to_visit_state(&mut to_visit_states, next_state);
                 }
             }
-            prune_to_visit_states(&mut to_visit_states, best_solution);
         }
 
-        best_solution as i64
+        upper_bound as i64
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
@@ -204,10 +198,6 @@ fn rotate(x: i8, y: i8, clockwise: bool) -> (i8, i8) {
         true => (-y, x),
         false => (y, -x),
     }
-}
-
-fn prune_to_visit_states(to_visit_states: &mut HashMap<usize, Vec<State>>, best_solution: usize) {
-    to_visit_states.retain(|k, _| *k < best_solution);
 }
 
 fn pop_next_to_visit_state(to_visit_states: &mut HashMap<usize, Vec<State>>) -> Option<StateCost> {
