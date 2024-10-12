@@ -1,8 +1,8 @@
-use crate::{
-    common::Point2D,
-    DayTask,
+use crate::{common::Point2D, DayTask};
+use std::{
+    collections::{HashMap, HashSet},
+    usize,
 };
-use std::collections::{HashMap, HashSet};
 
 pub struct Task;
 
@@ -28,14 +28,8 @@ struct State {
     straight_line_steps: u8,
 }
 
-
 impl State {
-    fn new(
-        pos: Point2D<i32>,
-        dx: i8,
-        dy: i8,
-        straight_line_steps: u8,
-    ) -> Self {
+    fn new(pos: Point2D<i32>, dx: i8, dy: i8, straight_line_steps: u8) -> Self {
         Self {
             pos,
             dx,
@@ -81,14 +75,7 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
-        let map = lines
-            .iter()
-            .map(|line| {
-                line.chars()
-                    .map(|c| c.to_digit(10).expect("Invalid digit") as u8)
-                    .collect()
-            })
-            .collect::<Vec<Vec<u8>>>();
+        let map = parse_map(lines);
 
         let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
         let mut visited_states = HashSet::new();
@@ -99,11 +86,6 @@ impl DayTask<i64> for Task {
 
         // upper limit on cost
         assert!(map.len() == map[0].len());
-        let mut upper_bound = 0;
-        for i in 1..map.len() {
-            upper_bound += map[i-1][i] as usize;
-            upper_bound += map[i][i] as usize;
-        }
         while let Some(current_state) = pop_next_to_visit_state(&mut to_visit_states) {
             // check if we're done
             if current_state.state.pos == destination {
@@ -117,21 +99,51 @@ impl DayTask<i64> for Task {
             // add next states to visit
             let next_states = get_next_states(&map, &current_state);
             for next_state in next_states {
-                if next_state.cost < upper_bound && !visited_states.contains(&next_state.state) {
+                if !visited_states.contains(&next_state.state) {
                     add_to_visit_state(&mut to_visit_states, next_state);
                 }
             }
         }
 
-        upper_bound as i64
+        panic!("No solution found")
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
-        todo!()
+        let map = parse_map(lines);
+
+        let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
+        let mut visited_states = HashSet::new();
+        let mut to_visit_states = HashMap::from([
+            (8, vec![State::new(Point2D { x: 3, y: 0 }, 1, 0, 4)]),
+            (9, vec![State::new(Point2D { x: 0, y: 3 }, 0, 1, 4)]),
+        ]);
+
+        // upper limit on cost
+        assert!(map.len() == map[0].len());
+        while let Some(current_state) = pop_next_to_visit_state(&mut to_visit_states) {
+            // check if we're done
+            if current_state.state.pos == destination {
+                return current_state.cost as i64;
+            }
+
+            if !visited_states.insert(current_state.state.clone()) {
+                continue;
+            }
+
+            // add next states to visit
+            let next_states = get_next_states_ultra(&map, &current_state);
+            for next_state in next_states {
+                if !visited_states.contains(&next_state.state) {
+                    add_to_visit_state(&mut to_visit_states, next_state);
+                }
+            }
+        }
+
+        panic!("No solution found")
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(1244)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
@@ -139,12 +151,93 @@ impl DayTask<i64> for Task {
     }
 }
 
+fn parse_map(lines: &Vec<String>) -> Vec<Vec<u8>> {
+    let map = lines
+        .iter()
+        .map(|line| {
+            line.chars()
+                .map(|c| c.to_digit(10).expect("Invalid digit") as u8)
+                .collect()
+        })
+        .collect::<Vec<Vec<u8>>>();
+    map
+}
+
 fn add_to_visit_state(to_visit_states: &mut HashMap<usize, Vec<State>>, state: StateCost) {
     if to_visit_states.contains_key(&state.cost) {
-        to_visit_states.get_mut(&state.cost).unwrap().push(state.state);
+        to_visit_states
+            .get_mut(&state.cost)
+            .unwrap()
+            .push(state.state);
     } else {
         to_visit_states.insert(state.cost, vec![state.state]);
     }
+}
+
+fn get_next_states_ultra(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCost> {
+    if current.state.straight_line_steps < 4 {
+        panic!("I should never have steps < 4")
+    }
+    let current_state = current.state;
+    let mut res = Vec::<StateCost>::new();
+
+    let ccw = rotate(current_state.dx, current_state.dy, false);
+    let ccw_pos = Point2D::new(
+        current_state.pos.x + ccw.0 as i32 * 4,
+        current_state.pos.y + ccw.1 as i32 * 4,
+    );
+    if ccw_pos.in_range(map[0].len() as i32, map.len() as i32) {
+        let ccw_cost = (1..=4)
+            .map(|i| {
+                map[(current_state.pos.y + ccw.1 as i32 * i) as usize]
+                    [(current_state.pos.x + ccw.0 as i32 * i) as usize] as usize
+            })
+            .sum::<usize>();
+            res.push(StateCost {
+                state: State::new(ccw_pos, ccw.0, ccw.1, 4),
+                cost: ccw_cost,
+            })
+    }
+
+    let cw = rotate(current_state.dx, current_state.dy, true);
+    let cw_pos = Point2D::new(
+        current_state.pos.x + cw.0 as i32 * 4,
+        current_state.pos.y + cw.1 as i32 * 4,
+    );
+    if cw_pos.in_range(map[0].len() as i32, map.len() as i32) {
+        let cw_cost = (1..=4)
+            .map(|i| {
+                map[(current_state.pos.y + cw.1 as i32 * i) as usize]
+                    [(current_state.pos.x + cw.0 as i32 * i) as usize] as usize
+            })
+            .sum::<usize>();
+            res.push(StateCost {
+                state: State::new(cw_pos, cw.0, cw.1, 4),
+                cost: cw_cost,
+            })
+    }
+
+    if current_state.straight_line_steps < 10 {
+        let pos = Point2D::new(
+            current_state.pos.x + current_state.dx as i32,
+            current_state.pos.y + current_state.dy as i32,
+        );
+        if pos.in_range(map[0].len() as i32, map.len() as i32) {
+            res.push(StateCost {
+                state: State::new(
+                    pos,
+                    current_state.dx,
+                    current_state.dy,
+                    current_state.straight_line_steps + 1,),
+                cost: current.cost
+                    + map[(current_state.pos.x + current_state.dx as i32) as usize]
+                        [(current_state.pos.y + current_state.dy as i32) as usize] as usize,
+                }
+            );
+        }
+    }
+
+    res
 }
 
 fn get_next_states(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCost> {
@@ -160,34 +253,25 @@ fn get_next_states(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCost> {
         current_state.pos.y + cw.1 as i32,
     );
 
-    let mut to_add = vec![
-        (ccw_pos, ccw, 1),
-        (cw_pos, cw, 1),
-    ];
+    let mut to_add = vec![(ccw_pos, ccw, 1), (cw_pos, cw, 1)];
     if current_state.straight_line_steps < 3 {
-        to_add.push((Point2D::new(
+        to_add.push((
+            Point2D::new(
                 current_state.pos.x + current_state.dx as i32,
                 current_state.pos.y + current_state.dy as i32,
-            ), 
-            (current_state.dx, current_state.dy), 
-            current_state.straight_line_steps + 1
+            ),
+            (current_state.dx, current_state.dy),
+            current_state.straight_line_steps + 1,
         ));
     }
 
     let mut res = Vec::<StateCost>::new();
-    for (new_pos, new_dpl, new_straight) in to_add
-    {
+    for (new_pos, new_dpl, new_straight) in to_add {
         if new_pos.in_range(map[0].len() as i32, map.len() as i32) {
-            res.push(
-                StateCost { 
-                    state: State::new(
-                        new_pos,
-                        new_dpl.0,
-                        new_dpl.1,
-                        new_straight,),
-                    cost: current.cost + map[new_pos.y as usize][new_pos.x as usize] as usize,
-                }
-            )
+            res.push(StateCost {
+                state: State::new(new_pos, new_dpl.0, new_dpl.1, new_straight),
+                cost: current.cost + map[new_pos.y as usize][new_pos.x as usize] as usize,
+            })
         }
     }
     res
@@ -213,4 +297,17 @@ fn pop_next_to_visit_state(to_visit_states: &mut HashMap<usize, Vec<State>>) -> 
         state: res.unwrap(),
         cost: min_key,
     })
+}
+
+pub trait StateStore {
+    fn pop_next_to_visit_state(
+        to_visit_states: &mut HashMap<usize, Vec<State>>,
+    ) -> Option<StateCost>;
+    fn get_next_states(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCost>;
+}
+
+struct AStar {}
+
+impl AStar {
+    fn new() {}
 }
