@@ -113,9 +113,16 @@ impl DayTask<i64> for Task {
 
         let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
         let mut visited_states = HashSet::new();
+        
+        let right_cost = (1..=3)
+                .map(|i| map[0][i] as usize)
+                .sum::<usize>();
+        let down_cost = (1..=3)
+                .map(|i| map[i][0] as usize)
+                .sum::<usize>();
         let mut to_visit_states = HashMap::from([
-            (8, vec![State::new(Point2D { x: 3, y: 0 }, 1, 0, 4)]),
-            (9, vec![State::new(Point2D { x: 0, y: 3 }, 0, 1, 4)]),
+            (right_cost, vec![State::new(Point2D { x: 3, y: 0 }, 1, 0, 4)]),
+            (down_cost, vec![State::new(Point2D { x: 0, y: 3 }, 0, 1, 4)]),
         ]);
 
         // upper limit on cost
@@ -147,7 +154,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(1367)
     }
 }
 
