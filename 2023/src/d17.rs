@@ -114,8 +114,8 @@ impl DayTask<i64> for Task {
         let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
         let mut visited_states = HashSet::new();
         let mut to_visit_states = HashMap::from([
-            (12, vec![State::new(Point2D { x: 4, y: 0 }, 1, 0, 4)]),
-            (13, vec![State::new(Point2D { x: 0, y: 4 }, 0, 1, 4)]),
+            (8, vec![State::new(Point2D { x: 3, y: 0 }, 1, 0, 4)]),
+            (9, vec![State::new(Point2D { x: 0, y: 3 }, 0, 1, 4)]),
         ]);
 
         // upper limit on cost
@@ -187,17 +187,18 @@ fn get_next_states_ultra(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCo
         current_state.pos.y + ccw.1 as i32 * 4,
     );
     if ccw_pos.in_range(map[0].len() as i32, map.len() as i32) {
-        let ccw_cost = current.cost 
+        let ccw_cost = current.cost
             + (1..=4)
-            .map(|i| {
-                map[(current_state.pos.y + ccw.1 as i32 * i) as usize]
-                    [(current_state.pos.x + ccw.0 as i32 * i) as usize] as usize
-            })
-            .sum::<usize>();
-            res.push(StateCost {
-                state: State::new(ccw_pos, ccw.0, ccw.1, 4),
-                cost: ccw_cost,
-            })
+                .map(|i| {
+                    map[(current_state.pos.y + ccw.1 as i32 * i) as usize]
+                        [(current_state.pos.x + ccw.0 as i32 * i) as usize]
+                        as usize
+                })
+                .sum::<usize>();
+        res.push(StateCost {
+            state: State::new(ccw_pos, ccw.0, ccw.1, 4),
+            cost: ccw_cost,
+        })
     }
 
     let cw = rotate(current_state.dx, current_state.dy, true);
@@ -206,17 +207,18 @@ fn get_next_states_ultra(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCo
         current_state.pos.y + cw.1 as i32 * 4,
     );
     if cw_pos.in_range(map[0].len() as i32, map.len() as i32) {
-        let cw_cost = current.cost 
+        let cw_cost = current.cost
             + (1..=4)
-            .map(|i| {
-                map[(current_state.pos.y + cw.1 as i32 * i) as usize]
-                    [(current_state.pos.x + cw.0 as i32 * i) as usize] as usize
-            })
-            .sum::<usize>();
-            res.push(StateCost {
-                state: State::new(cw_pos, cw.0, cw.1, 4),
-                cost: cw_cost,
-            })
+                .map(|i| {
+                    map[(current_state.pos.y + cw.1 as i32 * i) as usize]
+                        [(current_state.pos.x + cw.0 as i32 * i) as usize]
+                        as usize
+                })
+                .sum::<usize>();
+        res.push(StateCost {
+            state: State::new(cw_pos, cw.0, cw.1, 4),
+            cost: cw_cost,
+        })
     }
 
     if current_state.straight_line_steps < 10 {
@@ -230,12 +232,13 @@ fn get_next_states_ultra(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCo
                     pos,
                     current_state.dx,
                     current_state.dy,
-                    current_state.straight_line_steps + 1,),
+                    current_state.straight_line_steps + 1,
+                ),
                 cost: current.cost
                     + map[(current_state.pos.y + current_state.dy as i32) as usize]
-                        [(current_state.pos.x + current_state.dx as i32) as usize] as usize,
-                }
-            );
+                        [(current_state.pos.x + current_state.dx as i32) as usize]
+                        as usize,
+            });
         }
     }
 
