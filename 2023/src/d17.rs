@@ -232,8 +232,8 @@ fn get_next_states_ultra(map: &Vec<Vec<u8>>, current: &StateCost) -> Vec<StateCo
                     current_state.dy,
                     current_state.straight_line_steps + 1,),
                 cost: current.cost
-                    + map[(current_state.pos.x + current_state.dx as i32) as usize]
-                        [(current_state.pos.y + current_state.dy as i32) as usize] as usize,
+                    + map[(current_state.pos.y + current_state.dy as i32) as usize]
+                        [(current_state.pos.x + current_state.dx as i32) as usize] as usize,
                 }
             );
         }
