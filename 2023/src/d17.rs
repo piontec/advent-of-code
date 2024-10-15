@@ -37,15 +37,6 @@ impl State {
             straight_line_steps,
         }
     }
-
-    fn starting(x: i32, y: i32, dx: i8, dy: i8) -> Self {
-        Self {
-            pos: Point2D::new(x, y),
-            dx,
-            dy,
-            straight_line_steps: 1,
-        }
-    }
 }
 
 struct StateCost {
@@ -75,78 +66,11 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
-        let map = parse_map(lines);
-
-        let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
-        let mut visited_states = HashSet::new();
-        let mut to_visit_states = HashMap::from([
-            (map[0][1] as usize, vec![State::new(Point2D { x: 1, y: 0 }, 1, 0, 2)]),
-            (map[1][0] as usize, vec![State::new(Point2D { x: 0, y: 1 }, 0, 1, 2)]),
-        ]);
-
-        // upper limit on cost
-        assert!(map.len() == map[0].len());
-        while let Some(current_state) = pop_next_to_visit_state(&mut to_visit_states) {
-            // check if we're done
-            if current_state.state.pos == destination {
-                return current_state.cost as i64;
-            }
-
-            if !visited_states.insert(current_state.state.clone()) {
-                continue;
-            }
-
-            // add next states to visit
-            let next_states = get_next_states(&map, &current_state, 1, 3);
-            for next_state in next_states {
-                if !visited_states.contains(&next_state.state) {
-                    add_to_visit_state(&mut to_visit_states, next_state);
-                }
-            }
-        }
-
-        panic!("No solution found")
+        run_it(lines, 1, 3)
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
-        let map = parse_map(lines);
-
-        let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
-        let mut visited_states = HashSet::new();
-        
-        let right_cost = (1..=3)
-                .map(|i| map[0][i] as usize)
-                .sum::<usize>();
-        let down_cost = (1..=3)
-                .map(|i| map[i][0] as usize)
-                .sum::<usize>();
-        let mut to_visit_states = HashMap::from([
-            (right_cost, vec![State::new(Point2D { x: 3, y: 0 }, 1, 0, 4)]),
-            (down_cost, vec![State::new(Point2D { x: 0, y: 3 }, 0, 1, 4)]),
-        ]);
-
-        // upper limit on cost
-        assert!(map.len() == map[0].len());
-        while let Some(current_state) = pop_next_to_visit_state(&mut to_visit_states) {
-            // check if we're done
-            if current_state.state.pos == destination {
-                return current_state.cost as i64;
-            }
-
-            if !visited_states.insert(current_state.state.clone()) {
-                continue;
-            }
-
-            // add next states to visit
-            let next_states = get_next_states(&map, &current_state, 4, 10);
-            for next_state in next_states {
-                if !visited_states.contains(&next_state.state) {
-                    add_to_visit_state(&mut to_visit_states, next_state);
-                }
-            }
-        }
-
-        panic!("No solution found")
+        run_it(lines, 4, 10)
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -156,6 +80,68 @@ impl DayTask<i64> for Task {
     fn get_part2_result(&self) -> Option<i64> {
         Some(1367)
     }
+}
+
+fn run_it(lines: &Vec<String>, min_steps: u8, max_steps: u8) -> i64 {
+    let map = parse_map(lines);
+
+    let destination = Point2D::new(map[0].len() as i32 - 1, map.len() as i32 - 1);
+    let mut visited_states = HashSet::new();
+
+    let right_cost = (1..min_steps)
+        .map(|i| map[0][i as usize] as usize)
+        .sum::<usize>();
+    let down_cost = (1..min_steps)
+        .map(|i| map[i as usize][0] as usize)
+        .sum::<usize>();
+    let mut to_visit_states = HashMap::from([
+        (
+            right_cost,
+            vec![State::new(
+                Point2D {
+                    x: min_steps as i32 - 1,
+                    y: 0,
+                },
+                1,
+                0,
+                min_steps,
+            )],
+        ),
+        (
+            down_cost,
+            vec![State::new(
+                Point2D {
+                    x: 0,
+                    y: min_steps as i32 - 1,
+                },
+                0,
+                1,
+                min_steps,
+            )],
+        ),
+    ]);
+
+    assert!(map.len() == map[0].len());
+    while let Some(current_state) = pop_next_to_visit_state(&mut to_visit_states) {
+        // check if we're done
+        if current_state.state.pos == destination {
+            return current_state.cost as i64;
+        }
+
+        if !visited_states.insert(current_state.state.clone()) {
+            continue;
+        }
+
+        // add next states to visit
+        let next_states = get_next_states(&map, &current_state, min_steps, max_steps);
+        for next_state in next_states {
+            if !visited_states.contains(&next_state.state) {
+                add_to_visit_state(&mut to_visit_states, next_state);
+            }
+        }
+    }
+
+    panic!("No solution found")
 }
 
 fn parse_map(lines: &Vec<String>) -> Vec<Vec<u8>> {
@@ -181,7 +167,12 @@ fn add_to_visit_state(to_visit_states: &mut HashMap<usize, Vec<State>>, state: S
     }
 }
 
-fn get_next_states(map: &Vec<Vec<u8>>, current: &StateCost, min_steps: u8, max_steps: u8) -> Vec<StateCost> {
+fn get_next_states(
+    map: &Vec<Vec<u8>>,
+    current: &StateCost,
+    min_steps: u8,
+    max_steps: u8,
+) -> Vec<StateCost> {
     if current.state.straight_line_steps < min_steps {
         panic!("I should never have so few steps")
     }
