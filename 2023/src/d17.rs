@@ -179,64 +179,36 @@ fn get_next_states(
     let current_state = current.state;
     let mut res = Vec::<StateCost>::new();
 
-    let ccw = rotate(current_state.dx, current_state.dy, false);
-    let ccw_pos = Point2D::new(
-        current_state.pos.x + ccw.0 as i32 * min_steps as i32,
-        current_state.pos.y + ccw.1 as i32 * min_steps as i32,
-    );
-    if ccw_pos.in_range(map[0].len() as i32, map.len() as i32) {
-        let ccw_cost = current.cost
-            + (1..=min_steps)
-                .map(|i| {
-                    map[(current_state.pos.y + ccw.1 as i32 * i as i32) as usize]
-                        [(current_state.pos.x + ccw.0 as i32 * i as i32) as usize]
-                        as usize
-                })
-                .sum::<usize>();
-        res.push(StateCost {
-            state: State::new(ccw_pos, ccw.0, ccw.1, min_steps),
-            cost: ccw_cost,
-        })
-    }
-
-    let cw = rotate(current_state.dx, current_state.dy, true);
-    let cw_pos = Point2D::new(
-        current_state.pos.x + cw.0 as i32 * min_steps as i32,
-        current_state.pos.y + cw.1 as i32 * min_steps as i32,
-    );
-    if cw_pos.in_range(map[0].len() as i32, map.len() as i32) {
-        let cw_cost = current.cost
-            + (1..=min_steps)
-                .map(|i| {
-                    map[(current_state.pos.y + cw.1 as i32 * i as i32) as usize]
-                        [(current_state.pos.x + cw.0 as i32 * i as i32) as usize]
-                        as usize
-                })
-                .sum::<usize>();
-        res.push(StateCost {
-            state: State::new(cw_pos, cw.0, cw.1, min_steps),
-            cost: cw_cost,
-        })
-    }
-
+    let mut transformations = vec![
+        (rotate(current_state.dx, current_state.dy, true), min_steps),
+        (rotate(current_state.dx, current_state.dy, false), min_steps),
+    ];
     if current_state.straight_line_steps < max_steps {
-        let pos = Point2D::new(
-            current_state.pos.x + current_state.dx as i32,
-            current_state.pos.y + current_state.dy as i32,
+        transformations.push(((current_state.dx, current_state.dy), 1));
+    }
+
+    for (dxy, steps) in transformations {
+        let new_pos = Point2D::new(
+            current_state.pos.x + dxy.0 as i32 * steps as i32,
+            current_state.pos.y + dxy.1 as i32 * steps as i32,
         );
-        if pos.in_range(map[0].len() as i32, map.len() as i32) {
+        if new_pos.in_range(map[0].len() as i32, map.len() as i32) {
+            let new_cost = current.cost
+                + (1..=steps)
+                    .map(|i| {
+                        map[(current_state.pos.y + dxy.1 as i32 * i as i32) as usize]
+                            [(current_state.pos.x + dxy.0 as i32 * i as i32) as usize]
+                            as usize
+                    })
+                    .sum::<usize>();
             res.push(StateCost {
                 state: State::new(
-                    pos,
-                    current_state.dx,
-                    current_state.dy,
-                    current_state.straight_line_steps + 1,
-                ),
-                cost: current.cost
-                    + map[(current_state.pos.y + current_state.dy as i32) as usize]
-                        [(current_state.pos.x + current_state.dx as i32) as usize]
-                        as usize,
-            });
+                    new_pos, 
+                    dxy.0, 
+                    dxy.1, 
+                    if dxy == (current_state.dx, current_state.dy) { current_state.straight_line_steps + 1 } else { steps }),
+                cost: new_cost,
+            })
         }
     }
 
