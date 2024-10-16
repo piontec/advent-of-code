@@ -21,6 +21,10 @@ where T: Signed + Copy + Eq + Ord{
     pub fn in_range(&self, x_range: T, y_range: T) -> bool {
         return self.x >= T::zero() && self.x < x_range && self.y >= T::zero() && self.y < y_range;
     }
+
+    pub fn move_dxy(&self, dx: T, dy: T) -> Self {
+        return Self::new(self.x + dx, self.y + dy);
+    }
 }
 
 #[repr(u8)]
