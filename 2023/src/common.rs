@@ -1,6 +1,6 @@
 use num::Signed;
 
-#[derive(Eq, PartialEq, Hash, Copy, Clone)]
+#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub struct Point2D<T> 
 where T: Signed {
     pub x: T,
