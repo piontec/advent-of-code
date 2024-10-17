@@ -78,66 +78,98 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> i64 {
-        todo!()
+        952408144115
     }
 
     fn run_p1(&self, lines: &Vec<String>) -> i64 {
-        let mut current_pos = Point2D::new(0,0);
-        let mut first_dir: Option<char> = None;
-        let mut map: HashMap<Point2D<i32>, Tile> = HashMap::new();
-        let mut last_dir: Option<char> = None;
-        for line in lines {
-            let mut fields = line.split_ascii_whitespace();
-            let dir = fields.next().unwrap().chars().next().unwrap();
-            let steps = fields.next().unwrap().parse::<i32>().unwrap();
-            if last_dir.is_some_and(|ld| ld != dir) {
-                *map.get_mut(&current_pos).unwrap() = Tile::Edge(get_edge_type(last_dir.unwrap(), dir));
-            }
-            last_dir = Some(dir);
-            // we skip the point (0,0), so we should end up in it
-            for _ in 0..steps {
-                match dir {
-                    'U' => {
-                        current_pos = current_pos.move_dxy(0, 1);
-                    }
-                    'D' => {
-                        current_pos = current_pos.move_dxy(0, -1);
-                    }
-                    'L' => {
-                        current_pos = current_pos.move_dxy(-1, 0);
-                    }
-                    'R' => {
-                        current_pos = current_pos.move_dxy(1, 0);
-                    }
-                    _ => panic!("Unknown direction"),
-                }
-                if first_dir.is_none() {
-                    first_dir = Some(dir);
-                }
-                map.insert(current_pos, Tile::Edge(
-                    if ['U', 'D'].contains(&dir) { 
-                        EdgeType::Vertical
-                    } else { 
-                        EdgeType::Horizontal
-                    }));
-            }
-        }
-        *map.get_mut(&current_pos).unwrap() = Tile::Edge(get_edge_type(last_dir.unwrap(), first_dir.unwrap()));
-
+        let map = parse_map(lines, parse_line_part1);
         count_inner(&map)
     }
 
     fn run_p2(&self, lines: &Vec<String>) -> i64 {
-        todo!()
+        let map = parse_map(lines, parse_line_part2);
+        count_inner(&map)
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(35991)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
         None
     }
+}
+
+fn parse_line_part1(line: &str) -> (char, i32) {
+    let mut fields = line.split_ascii_whitespace();
+    let dir = fields.next().unwrap().chars().next().unwrap();
+    let steps = fields.next().unwrap().parse::<i32>().unwrap();
+    (dir, steps)
+}
+
+fn parse_line_part2(line: &str) -> (char, i32) {
+    let mut fields = line.split_ascii_whitespace();
+    let hex = fields.nth(2).unwrap();
+    let steps = i32::from_str_radix(&hex[2..=6], 16).unwrap();
+    let raw_step = hex.as_bytes()[7] as char;
+    let dir = match raw_step {
+        '0' => 'R',
+        '1' => 'D',
+        '2' => 'L',
+        '3' => 'U',
+        _ => panic!("Unknown direction"),
+    };
+    (dir, steps)
+}
+
+fn parse_map(
+    lines: &Vec<String>,
+    parse_line: fn(&str) -> (char, i32),
+) -> HashMap<Point2D<i32>, Tile> {
+    let mut current_pos = Point2D::new(0, 0);
+    let mut first_dir: Option<char> = None;
+    let mut map: HashMap<Point2D<i32>, Tile> = HashMap::new();
+    let mut last_dir: Option<char> = None;
+    for line in lines {
+        let (dir, steps) = parse_line(line);
+        if last_dir.is_some_and(|ld| ld != dir) {
+            *map.get_mut(&current_pos).unwrap() = Tile::Edge(get_edge_type(last_dir.unwrap(), dir));
+        }
+        last_dir = Some(dir);
+        // we skip the point (0,0), so we should end up in it
+        for _ in 0..steps {
+            match dir {
+                'U' => {
+                    current_pos = current_pos.move_dxy(0, 1);
+                }
+                'D' => {
+                    current_pos = current_pos.move_dxy(0, -1);
+                }
+                'L' => {
+                    current_pos = current_pos.move_dxy(-1, 0);
+                }
+                'R' => {
+                    current_pos = current_pos.move_dxy(1, 0);
+                }
+                _ => panic!("Unknown direction"),
+            }
+            if first_dir.is_none() {
+                first_dir = Some(dir);
+            }
+            map.insert(
+                current_pos,
+                Tile::Edge(if ['U', 'D'].contains(&dir) {
+                    EdgeType::Vertical
+                } else {
+                    EdgeType::Horizontal
+                }),
+            );
+        }
+    }
+    *map.get_mut(&current_pos).unwrap() =
+        Tile::Edge(get_edge_type(last_dir.unwrap(), first_dir.unwrap()));
+
+    map
 }
 
 fn count_inner(map: &HashMap<Point2D<i32>, Tile>) -> i64 {
@@ -159,18 +191,21 @@ fn count_inner(map: &HashMap<Point2D<i32>, Tile>) -> i64 {
                         if et.is_corner() {
                             if last_corner.is_some() {
                                 let lc = last_corner.unwrap();
-                                if (lc == EdgeType::ULC && *et == EdgeType::DRC) || (lc == EdgeType::DLC && *et == EdgeType::URC) {
+                                if (lc == EdgeType::ULC && *et == EdgeType::DRC)
+                                    || (lc == EdgeType::DLC && *et == EdgeType::URC)
+                                {
                                     inside = !inside;
                                 }
                                 last_corner = None;
-                            }
-                            else {
+                            } else {
                                 last_corner = Some(*et);
                             }
                         }
                         // and ignoring et.is_horizontal() as they don't change inside value
                     }
-                    _ => {panic!("Unexpected tile")}
+                    _ => {
+                        panic!("Unexpected tile")
+                    }
                 }
                 count += 1;
                 continue;
