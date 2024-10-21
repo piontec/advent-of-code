@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 pub struct Task;
 
+#[derive(Debug, Eq, PartialEq)]
 enum Condition {
     LT,
     GT,
@@ -103,22 +104,13 @@ fn eval_object(line: &str, rules: &HashMap<String, Vec<Rule>>) -> i64 {
                 Rule::Absolute(target) => Some(target),
                 Rule::Complex(property, condition, value, target) => {
                     let prop_value = props.get(property).unwrap();
-                    match condition {
-                        Condition::LT => {
-                            if prop_value < value {
-                                Some(target)
-                            } else {
-                                None
-                            }
-                        }
-                        Condition::GT => {
-                            if prop_value > value {
-                                Some(target)
-                            } else {
-                                None
-                            }
-                        }
-                    }
+                    if (*condition == Condition::LT && prop_value < value)
+                        || (*condition == Condition::GT && prop_value > value)
+                    {
+                        Some(target)
+                    } else {
+                        None
+                    } 
                 }
             };
             match target_rule {
@@ -129,7 +121,7 @@ fn eval_object(line: &str, rules: &HashMap<String, Vec<Rule>>) -> i64 {
                         return props.into_values().sum();
                     }
                     current_rule = target;
-                    continue;
+                    break;
                 }
                 None => continue,
             }
@@ -140,6 +132,7 @@ fn eval_object(line: &str, rules: &HashMap<String, Vec<Rule>>) -> i64 {
 fn parse_rule(line: &str) -> (String, Vec<Rule>) {
     let mut sub_rules = vec![];
     let (name, rules_part) = line.split_once("{").unwrap();
+    let rules_part = rules_part.strip_suffix("}").unwrap();
     for rule_str in rules_part.split(",") {
         let rule = match rule_str.split_once(":") {
             Some((condition, target)) => {
@@ -150,7 +143,7 @@ fn parse_rule(line: &str) -> (String, Vec<Rule>) {
                     '>' => Condition::GT,
                     _ => panic!("Invalid condition"),
                 };
-                let value = chars[2..chars.len() - 1]
+                let value = chars[2..chars.len()]
                     .into_iter()
                     .collect::<String>()
                     .parse::<i64>()
