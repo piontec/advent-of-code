@@ -11,6 +11,7 @@ mod d17;
 mod d18;
 mod d19;
 mod d2;
+mod d20;
 mod d3;
 mod d4;
 mod d5;
@@ -109,5 +110,6 @@ fn main() {
     // d16::Task.main();
     // d17::Task.main();
     // d18::Task.main();
-    d19::Task.main();
+    // d19::Task.main();
+    d20::Task.main();
 }
