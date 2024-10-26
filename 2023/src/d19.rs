@@ -89,7 +89,7 @@ impl DayTask<i64> for Task {
         167409079868000
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let mut total = 0;
         let mut rules: HashMap<String, Vec<Rule>> = HashMap::new();
 
@@ -110,7 +110,7 @@ impl DayTask<i64> for Task {
         total
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         let mut rules: HashMap<String, Vec<Rule>> = HashMap::new();
 
         for line in lines {

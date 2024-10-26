@@ -47,11 +47,11 @@ impl DayTask<usize> for Task {
         6
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> usize {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> usize {
         do_steps(lines, |e| e == "AAA", |e| e == "ZZZ")
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> usize {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> usize {
         do_cycles(lines)
     }
 

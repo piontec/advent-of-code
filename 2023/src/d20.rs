@@ -102,7 +102,7 @@ impl DayTask<i64> for Task {
         todo!()
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let mut links: HashMap<String, Vec<&str>> = HashMap::new();
         let mut modules: HashMap<String, Box<dyn Module>> = HashMap::new();
         for line in lines {

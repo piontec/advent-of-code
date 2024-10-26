@@ -37,7 +37,7 @@ impl DayTask<i64> for Task {
         145
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let res: usize = lines[0]
             .split(",")
             .map(|s| get_hash(s))
@@ -45,7 +45,7 @@ impl DayTask<i64> for Task {
         res as i64
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         let instructions: Vec<&str> = lines[0].split(",").collect();
         let mut boxes = vec![Vec::<Lens>::new(); 256];
 

@@ -36,7 +36,7 @@ impl DayTask<usize> for Task {
         467835
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> usize {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> usize {
         // answer: 537732
         let mut result = 0;
         for numpos in get_numpos(&lines) {
@@ -48,7 +48,7 @@ impl DayTask<usize> for Task {
         result
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> usize {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> usize {
         // 84883664
         let mut result = 0;
         let mut gears: HashMap<Position, Vec<SymbolNum>> = HashMap::new();

@@ -81,12 +81,12 @@ impl DayTask<i64> for Task {
         952408144115
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let map = parse_map(lines, parse_line_part1);
         count_inner(&map)
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         let map = parse_map(lines, parse_line_part2);
         count_inner(&map)
     }

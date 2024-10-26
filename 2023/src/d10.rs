@@ -32,11 +32,11 @@ impl DayTask<i32> for Task {
         1
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i32 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i32 {
         get_path(lines).len() as i32 / 2
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i32 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i32 {
         let path = get_path(lines);
         let mut in_counter = 0;
 

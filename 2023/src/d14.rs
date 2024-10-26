@@ -38,7 +38,7 @@ impl DayTask<i64> for Task {
         64
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let mut map = lines
             .iter()
             .map(|l| l.chars().collect::<Vec<char>>())
@@ -47,7 +47,7 @@ impl DayTask<i64> for Task {
         count_weight(&map)
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         let mut rounds = 1000000000;
         // let mut rounds = 20;
         let mut cache: HashMap<String, usize> = HashMap::new();

@@ -34,12 +34,12 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
         println!("[[Day {day} - part 1]]");
         let now = Instant::now();
         assert_eq!(
-            self.run_p1(&self.get_test_data(self.get_part1_test_input())),
+            self.run_p1(&self.get_test_data(self.get_part1_test_input()), true),
             self.get_part1_test_result()
         );
         println!("[test: {}ms]", now.elapsed().as_millis());
         let now = Instant::now();
-        let result1 = self.run_p1(&lines);
+        let result1 = self.run_p1(&lines, false);
         println!("{result1}");
         println!("[main: {}ms]", now.elapsed().as_millis());
         if let Some(res) = self.get_part1_result() {
@@ -49,12 +49,12 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
         println!("[[Day {day} - part 2]]");
         let now = Instant::now();
         assert_eq!(
-            self.run_p2(&self.get_test_data(self.get_part2_test_input())),
+            self.run_p2(&self.get_test_data(self.get_part2_test_input()), true),
             self.get_part2_test_result()
         );
         println!("[test: {}ms]", now.elapsed().as_millis());
         let now = Instant::now();
-        let result2 = self.run_p2(&lines);
+        let result2 = self.run_p2(&lines, false);
         println!("{result2}");
         println!("[main: {}ms]", now.elapsed().as_millis());
         if let Some(res) = self.get_part2_result() {
@@ -82,9 +82,9 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
 
     fn get_part2_test_result(&self) -> T;
 
-    fn run_p1(&self, lines: &Vec<String>) -> T;
+    fn run_p1(&self, lines: &Vec<String>, is_test: bool) -> T;
 
-    fn run_p2(&self, lines: &Vec<String>) -> T;
+    fn run_p2(&self, lines: &Vec<String>, is_test: bool) -> T;
 
     fn get_part1_result(&self) -> Option<T>;
 

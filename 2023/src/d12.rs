@@ -32,11 +32,11 @@ impl DayTask<i64> for Task {
         525152
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         lines.iter().map(|line| count_permutations(line)).sum()
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         let result: Vec<String> = lines
             .iter()
             .map(|l| {

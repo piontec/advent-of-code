@@ -31,7 +31,7 @@ impl DayTask<i32> for Task {
     }
 
 
-    fn run_p1(&self, lines: &Vec<String>) -> i32 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i32 {
         let games = self.parse(lines);
         let target = Subset {
             green: 13,
@@ -44,7 +44,7 @@ impl DayTask<i32> for Task {
         result
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i32 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i32 {
         let games = self.parse(lines);
         let powers = games.iter().map(|g| {
             let mut max_green = 0;

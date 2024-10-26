@@ -26,7 +26,7 @@ impl DayTask<i32> for Task {
         71503
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i32 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i32 {
         let times = lines[0]
             .split(" ")
             .skip(1)
@@ -52,7 +52,7 @@ impl DayTask<i32> for Task {
         margin
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i32 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i32 {
         let time = lines[0].replace(" ", "").split(":").nth(1).unwrap().parse::<i64>().unwrap();
         let dist = lines[1].replace(" ", "").split(":").nth(1).unwrap().parse::<i64>().unwrap();
 

@@ -29,11 +29,11 @@ impl DayTask<i32> for Task {
         2
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i32 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i32 {
         lines.iter().map(|l| do_one_line(l)).sum()
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i32 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i32 {
         lines.iter().map(|l| do_one_line_part2(l)).sum()
     }
 

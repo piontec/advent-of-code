@@ -65,11 +65,11 @@ impl DayTask<i64> for Task {
         94
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         run_it(lines, 1, 3)
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         run_it(lines, 4, 10)
     }
 

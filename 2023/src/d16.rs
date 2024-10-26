@@ -45,7 +45,7 @@ impl DayTask<i64> for Task {
         51
     }
 
-    fn run_p1(&self, lines: &Vec<String>) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let map = create_map(lines);
         run_one(
             map,
@@ -56,7 +56,7 @@ impl DayTask<i64> for Task {
         )
     }
 
-    fn run_p2(&self, lines: &Vec<String>) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         let map = create_map(lines);
         let mut best_score = 0;
 
