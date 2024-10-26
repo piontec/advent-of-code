@@ -6,11 +6,11 @@ use std::{
 
 pub struct Task;
 
-const TI: &str = "broadcaster -> a, b, c
-%a -> b
-%b -> c
-%c -> inv
-&inv -> a";
+const TI: &str = "broadcaster -> a
+%a -> inv, con
+&inv -> b
+%b -> con
+&con -> output";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Pulse {
@@ -95,7 +95,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part1_test_result(&self) -> i64 {
-        32000000
+        11687500
     }
 
     fn get_part2_test_result(&self) -> i64 {
@@ -138,7 +138,11 @@ impl DayTask<i64> for Task {
             low_count += 1;
             while !pulses_on_inputs.is_empty() {
                 let (src_module, module_name, pulse) = pulses_on_inputs.pop_front().unwrap();
-                let module = modules.get_mut(module_name).unwrap();
+                let module = modules.get_mut(module_name);
+                if module.is_none(){
+                    continue;
+                }
+                let module = module.unwrap();
                 let new_pulse = module.process_pulse(&src_module, pulse);
                 if new_pulse == None {
                     continue;
@@ -162,7 +166,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(869395600)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
