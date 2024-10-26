@@ -99,7 +99,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> i64 {
-        todo!()
+        1
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -126,7 +126,7 @@ impl DayTask<i64> for Task {
         let to_check = vec!["tx", "dd", "nz", "ph"];
         let mut found_cycles: HashMap<String, i64> = HashMap::new();
         let mut count = 0;
-        for _ in 0..1000 {
+        loop {
             let (_, _, found) = push_the_button(&mut modules, &links, &to_check);
             count += 1;
             for module in found {
@@ -144,7 +144,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(232605773145467)
     }
 }
 
