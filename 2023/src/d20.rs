@@ -108,7 +108,7 @@ impl DayTask<i64> for Task {
         let mut low_count = 0;
         let mut high_count = 0;
         for _ in 0..1000 {
-            let (l, h) = push_the_button(&mut modules, &links);
+            let (l, h, _) = push_the_button(&mut modules, &links, &vec![]);
             low_count += l;
             high_count += h;
         }
@@ -122,7 +122,21 @@ impl DayTask<i64> for Task {
         }
         // "tx, dd nz ph" need to get low pulse, at the same time
         // then they all send 'high' to 'ls' which will send 'low' to 'rx'
-        todo!()
+        let (links, mut modules) = parse(lines);
+        let to_check = vec!["tx", "dd", "nz", "ph"];
+        let mut found_cycles: HashMap<String, i64> = HashMap::new();
+        let mut count = 0;
+        for _ in 0..1000 {
+            let (_, _, found) = push_the_button(&mut modules, &links, &to_check);
+            count += 1;
+            for module in found {
+                found_cycles.insert(module, count);
+            }
+            if found_cycles.len() == to_check.len() {
+                break;
+            }
+        }
+        found_cycles.values().product()
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -134,15 +148,20 @@ impl DayTask<i64> for Task {
     }
 }
 
-fn push_the_button(modules: &mut HashMap<String, Box<dyn Module>>, links: &HashMap<String, Vec<&str>>) -> (i64, i64) {
+fn push_the_button(
+    modules: &mut HashMap<String, Box<dyn Module>>,
+    links: &HashMap<String, Vec<&str>>,
+    to_check: &Vec<&str>,
+) -> (i64, i64, Vec<String>) {
     let mut low_count = 0;
     let mut high_count = 0;
+    let mut signals_found: Vec<String> = Vec::new();
     let mut pulses_on_inputs = VecDeque::from([("BUTTON", "broadcaster", Pulse::Low)]);
     low_count += 1;
     while !pulses_on_inputs.is_empty() {
         let (src_module, module_name, pulse) = pulses_on_inputs.pop_front().unwrap();
         let module = modules.get_mut(module_name);
-        if module.is_none(){
+        if module.is_none() {
             continue;
         }
         let module = module.unwrap();
@@ -150,16 +169,20 @@ fn push_the_button(modules: &mut HashMap<String, Box<dyn Module>>, links: &HashM
         if new_pulse == None {
             continue;
         }
+        let new_pulse = new_pulse.unwrap();
         for target in links.get(module_name).unwrap() {
-            pulses_on_inputs.push_back((module_name, target, new_pulse.unwrap()));
-            if new_pulse.unwrap() == Pulse::Low {
+            pulses_on_inputs.push_back((module_name, target, new_pulse));
+            if to_check.contains(target) && new_pulse == Pulse::Low {
+                signals_found.push(target.to_string());
+            }
+            if new_pulse == Pulse::Low {
                 low_count += 1;
             } else {
                 high_count += 1;
             }
         }
     }
-    (low_count, high_count)
+    (low_count, high_count, signals_found)
 }
 
 fn parse(lines: &Vec<String>) -> (HashMap<String, Vec<&str>>, HashMap<String, Box<dyn Module>>) {
@@ -169,7 +192,11 @@ fn parse(lines: &Vec<String>) -> (HashMap<String, Vec<&str>>, HashMap<String, Bo
         let parts: Vec<&str> = line.split(" -> ").collect();
         let targets: Vec<&str> = parts[1].split(", ").collect();
         let full_module_name = parts[0];
-        let module_name = if full_module_name == "broadcaster" {parts[0].to_string()} else {parts[0].chars().skip(1).collect::<String>()};
+        let module_name = if full_module_name == "broadcaster" {
+            parts[0].to_string()
+        } else {
+            parts[0].chars().skip(1).collect::<String>()
+        };
         links.insert(module_name.clone(), targets);
         let module: Box<dyn Module> = match full_module_name.chars().next().unwrap() {
             '%' => Box::new(FlipFlop::new()),
