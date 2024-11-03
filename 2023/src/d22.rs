@@ -75,8 +75,8 @@ impl DayTask<i64> for Task {
         // floor is at 0, so bricks with z=1 are already on the floor
         let mut new_bricks_by_z: HashMap<u16, Vec<i64>> = HashMap::new();
         let mut moved_bricks_ids: Vec<i64> = Vec::new();
-        for z in 1..=*bricks_by_z.keys().max().unwrap() {
-            let bricks_in_this_z = bricks_by_z.get(&(z as u16)).unwrap();
+        for z in bricks_by_z.keys().sorted() {
+            let bricks_in_this_z = bricks_by_z.get(z).unwrap();
             for brick_id in bricks_in_this_z.iter() {
                 if moved_bricks_ids.contains(brick_id) {
                     continue;
@@ -84,20 +84,22 @@ impl DayTask<i64> for Task {
                 let brick = bricks.get(*brick_id as usize).unwrap();
                 // does it overlap with any cube of any other brick below its original z?
                 let mut overlaps = false;
-                let mut moved_down = brick.iter().map(|(x, y, z)| (*x, *y, *z)).collect::<Vec<(i64, i64, i64)>>();
-                while !overlaps && moved_down.iter().all(|(_, _, z)| *z > 1) {
-                    moved_down = moved_down.iter().map(|(x, y, z)| (*x, *y, *z - 1)).collect::<Vec<(i64, i64, i64)>>();
-                    overlaps = bricks.iter().any(|b| {
-                        b.iter().any(|(x, y, z)| {
+                let mut moved_down = brick.clone();
+                let mut pre_moved_down = brick.clone();
+                while !overlaps && moved_down.iter().all(|(_, _, z)| *z > 0) {
+                    pre_moved_down = moved_down.clone();
+                    moved_down = pre_moved_down.iter().map(|(x, y, z)| (*x, *y, *z - 1)).collect::<Vec<(i64, i64, i64)>>();
+                    overlaps = bricks.iter().enumerate().any(|(id, b)| {
+                        id != *brick_id as usize && b.iter().any(|(x, y, z)| {
                             moved_down.iter().any(|(mx, my, mz)| {
                                 x == mx && y == my && z == mz
                             })
                         })
                     });
                 }
-                let moved_min_z = *moved_down.iter().map(|(_, _, z)| z).min().unwrap();
-                let moved_max_z = *moved_down.iter().map(|(_, _, z)| z).max().unwrap();
-                bricks[*brick_id as usize] = moved_down;
+                let moved_min_z = *pre_moved_down.iter().map(|(_, _, z)| z).min().unwrap();
+                let moved_max_z = *pre_moved_down.iter().map(|(_, _, z)| z).max().unwrap();
+                bricks[*brick_id as usize] = pre_moved_down;
                 moved_bricks_ids.push(*brick_id);
                 for z in moved_min_z..=moved_max_z {
                     new_bricks_by_z
@@ -114,14 +116,14 @@ impl DayTask<i64> for Task {
         // brick supporting it below
         let mut disintegrate_count = 0;
         for bid in 0..bricks.len() {
-            let on_top = get_bricks_on_top(bid, &bricks, &bricks_by_z);
-            for on_top_id in on_top.iter() {
-                let mut supporting_bricks = get_bricks_supporting(*on_top_id, &bricks, &bricks_by_z);
-                supporting_bricks.remove(&(bid as i64));
-                if supporting_bricks.len() > 0 {
-                    disintegrate_count += 1;
-                }
-            }
+             disintegrate_count += get_bricks_on_top(bid, &bricks, &bricks_by_z)
+                .iter()
+                .all(|on_top_id| {
+                    let mut supporting_bricks = get_bricks_supporting(*on_top_id, &bricks, &bricks_by_z);
+                    supporting_bricks.remove(&(bid as i64));
+                    supporting_bricks.len() > 0
+                })
+                as i64;
         }
 
         disintegrate_count
@@ -159,7 +161,11 @@ fn get_bricks_in_z_dist(bid: usize, bricks: &[Vec<(i64, i64, i64)>], bricks_by_z
         .filter(|(_, _, z)| *z == *border_z)
         .map(|(x, y, z)| (*x, *y, *z + z_dist))
         .collect::<Vec<(i64, i64, i64)>>();
-    for neighbor_brick_id in bricks_by_z.get(&((*border_z + z_dist) as u16)).unwrap() {
+    let neighbor_brick_ids = bricks_by_z.get(&((*border_z + z_dist) as u16));
+    if neighbor_brick_ids.is_none() {
+        return res;
+    }
+    for neighbor_brick_id in neighbor_brick_ids.unwrap() {
         let neighbor_brick = &bricks[*neighbor_brick_id as usize];
         if neighbor_brick.iter().any(|(x, y, z)| {
             border_z_cubes_moved.iter().any(|(mx, my, mz)| {
