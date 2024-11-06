@@ -1,6 +1,11 @@
 use crate::DayTask;
 use itertools::Itertools;
-use std::{borrow::BorrowMut, collections::{HashMap, HashSet}};
+use num::Signed;
+use std::{
+    collections::{HashMap, HashSet},
+    ops::{Add, AddAssign, Sub, SubAssign},
+    str,
+};
 
 pub struct Task;
 
@@ -12,7 +17,81 @@ const TI: &str = "1,0,1~1,2,1
 0,1,6~2,1,6
 1,1,8~1,1,9";
 
-type Coord = (i64, i64, i64);
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct Coord<T: Signed> {
+    x: T,
+    y: T,
+    z: T,
+}
+
+impl<T> Coord<T>
+where
+    T: Signed,
+{
+    fn new(x: T, y: T, z: T) -> Self {
+        Self { x, y, z }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct Cube<T: Signed> {
+    low_corner: Coord<T>,
+    high_corner: Coord<T>,
+}
+
+impl<T> Cube<T>
+where
+    T: Signed
+        + Eq
+        + Ord
+        + Copy
+        + Add<Output = T>
+        + Sub<Output = T>
+        + AddAssign<T>
+        + SubAssign<T>
+        + From<i8>,
+{
+    fn new(low_corner: Coord<T>, high_corner: Coord<T>) -> Self {
+        let min_x = *std::cmp::min(&low_corner.x, &high_corner.x);
+        let min_y = *std::cmp::min(&low_corner.y, &high_corner.y);
+        let min_z = *std::cmp::min(&low_corner.z, &high_corner.z);
+        let max_x = *std::cmp::max(&low_corner.x, &high_corner.x);
+        let max_y = *std::cmp::max(&low_corner.y, &high_corner.y);
+        let max_z = *std::cmp::max(&low_corner.z, &high_corner.z);
+        Self {
+            low_corner: Coord::new(min_x, min_y, min_z),
+            high_corner: Coord::new(max_x, max_y, max_z),
+        }
+    }
+
+    fn contains(&self, coord: &Coord<T>) -> bool {
+        coord.x >= self.low_corner.x
+            && coord.x <= self.high_corner.x
+            && coord.y >= self.low_corner.y
+            && coord.y <= self.high_corner.y
+            && coord.z >= self.low_corner.z
+            && coord.z <= self.high_corner.z
+    }
+
+    fn crosses(&self, other: &Cube<T>) -> bool {
+        self.low_corner.x <= other.high_corner.x
+            && self.high_corner.x >= other.low_corner.x
+            && self.low_corner.y <= other.high_corner.y
+            && self.high_corner.y >= other.low_corner.y
+            && self.low_corner.z <= other.high_corner.z
+            && self.high_corner.z >= other.low_corner.z
+    }
+
+    fn move_down(&mut self) {
+        self.low_corner.z -= T::from(1);
+        self.high_corner.z -= T::from(1);
+    }
+
+    fn move_up(&mut self) {
+        self.low_corner.z += T::from(1);
+        self.high_corner.z += T::from(1);
+    }
+}
 
 impl DayTask<i64> for Task {
     fn day_no(&self) -> u8 {
@@ -32,146 +111,164 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> i64 {
-        todo!()
+        7
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
-        let bricks_coords: Vec<(Coord, Coord)> = lines
-            .iter()
-            .map(|l| {
-                let mut parts = l.split('~');
-                let p1 = parts.next().unwrap();
-                let p2 = parts.next().unwrap();
-                let mut p1 = p1.split(',').map(|s| s.parse::<i64>().unwrap());
-                let mut p2 = p2.split(',').map(|s| s.parse::<i64>().unwrap());
-                (
-                    (p1.next().unwrap(), p1.next().unwrap(), p1.next().unwrap()),
-                    (p2.next().unwrap(), p2.next().unwrap(), p2.next().unwrap()),
-                )
-            })
-            .collect();
-        let mut bricks: Vec<Vec<(i64, i64, i64)>> = Vec::with_capacity(bricks_coords.len());
-        let mut bricks_by_z: HashMap<u16, Vec<i64>> = HashMap::new();
-        for (brick_start, brick_end) in bricks_coords {
-            let cubes = vec![
-                brick_start.0..=brick_end.0,
-                brick_start.1..=brick_end.1,
-                brick_start.2..=brick_end.2,
-            ]
-            .into_iter()
-            .multi_cartesian_product()
-            .map(|v| (v[0], v[1], v[2]))
-            .collect();
-            bricks.push(cubes);
-            let brick_id = bricks.len() - 1;
-            for z in brick_start.2..=brick_end.2 {
-                bricks_by_z
-                    .entry(z as u16)
-                    .or_insert(Vec::new())
-                    .push(brick_id as i64);
-            }
-        }
-        // move bricks down starting from the bottom
-        // floor is at 0, so bricks with z=1 are already on the floor
-        let mut new_bricks_by_z: HashMap<u16, Vec<i64>> = HashMap::new();
-        let mut moved_bricks_ids: Vec<i64> = Vec::new();
-        for z in bricks_by_z.keys().sorted() {
-            let bricks_in_this_z = bricks_by_z.get(z).unwrap();
-            for brick_id in bricks_in_this_z.iter() {
-                if moved_bricks_ids.contains(brick_id) {
-                    continue;
-                }
-                let brick = bricks.get(*brick_id as usize).unwrap();
-                // does it overlap with any cube of any other brick below its original z?
-                let mut overlaps = false;
-                let mut moved_down = brick.clone();
-                let mut pre_moved_down = brick.clone();
-                while !overlaps && moved_down.iter().all(|(_, _, z)| *z > 0) {
-                    pre_moved_down = moved_down.clone();
-                    moved_down = pre_moved_down.iter().map(|(x, y, z)| (*x, *y, *z - 1)).collect::<Vec<(i64, i64, i64)>>();
-                    overlaps = bricks.iter().enumerate().any(|(id, b)| {
-                        id != *brick_id as usize && b.iter().any(|(x, y, z)| {
-                            moved_down.iter().any(|(mx, my, mz)| {
-                                x == mx && y == my && z == mz
-                            })
-                        })
-                    });
-                }
-                let moved_min_z = *pre_moved_down.iter().map(|(_, _, z)| z).min().unwrap();
-                let moved_max_z = *pre_moved_down.iter().map(|(_, _, z)| z).max().unwrap();
-                bricks[*brick_id as usize] = pre_moved_down;
-                moved_bricks_ids.push(*brick_id);
-                for z in moved_min_z..=moved_max_z {
-                    new_bricks_by_z
-                        .entry(z as u16)
-                        .or_insert(Vec::new())
-                        .push(*brick_id);
-                }
-            }
-        }
-        bricks_by_z = new_bricks_by_z;
+        let mut bricks = parse(lines);
+        move_down_all(&mut bricks);
 
         // check what can be disintegrated
         // we can disintegrate a brick if for every brick that is on top of it, there's at least one more different
         // brick supporting it below
+        let bricks_by_z: HashMap<u16, Vec<i64>> =
+            bricks
+                .iter()
+                .enumerate()
+                .fold(HashMap::new(), |mut acc, (id, b)| {
+                    for z in b.low_corner.z..=b.high_corner.z {
+                        if acc.get(&(z as u16)).is_none() {
+                            acc.insert(z as u16, Vec::new());
+                        }
+                        acc.get_mut(&(z as u16)).unwrap().push(id as i64);
+                    }
+                    acc
+                });
         let mut disintegrate_count = 0;
         for bid in 0..bricks.len() {
-             disintegrate_count += get_bricks_on_top(bid, &bricks, &bricks_by_z)
-                .iter()
-                .all(|on_top_id| {
-                    let mut supporting_bricks = get_bricks_supporting(*on_top_id, &bricks, &bricks_by_z);
-                    supporting_bricks.remove(&(bid as i64));
-                    supporting_bricks.len() > 0
-                })
-                as i64;
+            disintegrate_count +=
+                get_bricks_on_top(bid, &bricks, &bricks_by_z)
+                    .iter()
+                    .all(|on_top_id| {
+                        let mut supporting_bricks =
+                            get_bricks_supporting(*on_top_id, &bricks, &bricks_by_z);
+                        supporting_bricks.remove(&(bid as i64));
+                        supporting_bricks.len() > 0
+                    }) as i64;
         }
 
         disintegrate_count
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
+        let mut bricks = parse(lines);
+        move_down_all(&mut bricks);
+
+        let mut total_moved = 0;
+        for bid in 0..bricks.len() {
+            let mut new_bricks: Vec<Cube<i64>> = (&bricks)
+                .iter()
+                .enumerate()
+                .filter_map(|(id, b)| {
+                    if id == bid {
+                        return None;
+                    }
+                    Some(b.clone())
+                })
+                .collect();
+            let moved_bricks_ids = move_down_all(&mut new_bricks);
+            total_moved += moved_bricks_ids.len() as i64;
+        }
+        total_moved
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(503)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(98431)
     }
 }
 
-fn get_bricks_supporting(bid: i64, bricks: &[Vec<(i64, i64, i64)>], bricks_by_z: &HashMap<u16, Vec<i64>>) -> HashSet<i64> {
+fn move_down_all(bricks: &mut Vec<Cube<i64>>) -> Vec<i64> {
+    // move bricks down starting from the bottom
+    // floor is at 0, so bricks with z=1 are already on the floor
+    let mut moved_bricks_ids: Vec<i64> = Vec::new();
+    for brick_id in 0..bricks.len() {
+        let brick = bricks.get(brick_id).unwrap();
+        // does it overlap with any cube of any other brick below its original z?
+        let mut crosses = false;
+        let mut moved_down = brick.clone();
+        let mut pre_moved_down = brick.clone();
+        while !crosses && moved_down.low_corner.z > 0 {
+            pre_moved_down = moved_down.clone();
+            moved_down.move_down();
+            // TODO: check this assumption that we can cross only with a brick with lower ID
+            crosses = bricks
+                .iter()
+                .enumerate()
+                .any(|(id, b)| id < brick_id as usize && b.crosses(&moved_down));
+        }
+        if bricks[brick_id] != pre_moved_down {
+            moved_bricks_ids.push(brick_id as i64);
+        }
+        bricks[brick_id] = pre_moved_down;
+    }
+    moved_bricks_ids
+}
+
+fn parse(lines: &Vec<String>) -> Vec<Cube<i64>> {
+    let bricks: Vec<Cube<i64>> = lines
+        .iter()
+        .map(|l| {
+            let mut parts = l.split('~');
+            let p1 = parts.next().unwrap();
+            let p2 = parts.next().unwrap();
+            let mut p1 = p1.split(',').map(|s| s.parse::<i64>().unwrap());
+            let mut p2 = p2.split(',').map(|s| s.parse::<i64>().unwrap());
+            Cube::new(
+                Coord::new(p1.next().unwrap(), p1.next().unwrap(), p1.next().unwrap()),
+                Coord::new(p2.next().unwrap(), p2.next().unwrap(), p2.next().unwrap()),
+            )
+        })
+        .sorted_by_key(|c| c.low_corner.z)
+        .collect();
+    bricks
+}
+
+fn get_bricks_supporting(
+    bid: i64,
+    bricks: &[Cube<i64>],
+    bricks_by_z: &HashMap<u16, Vec<i64>>,
+) -> HashSet<i64> {
     get_bricks_in_z_dist(bid as usize, bricks, bricks_by_z, -1)
 }
 
-fn get_bricks_on_top(bid: usize, bricks: &[Vec<(i64, i64, i64)>], bricks_by_z: &HashMap<u16, Vec<i64>>) -> HashSet<i64> {
+fn get_bricks_on_top(
+    bid: usize,
+    bricks: &[Cube<i64>],
+    bricks_by_z: &HashMap<u16, Vec<i64>>,
+) -> HashSet<i64> {
     get_bricks_in_z_dist(bid as usize, bricks, bricks_by_z, 1)
 }
 
-fn get_bricks_in_z_dist(bid: usize, bricks: &[Vec<(i64, i64, i64)>], bricks_by_z: &HashMap<u16, Vec<i64>>, z_dist: i64) -> HashSet<i64> {
+fn get_bricks_in_z_dist(
+    bid: usize,
+    bricks: &[Cube<i64>],
+    bricks_by_z: &HashMap<u16, Vec<i64>>,
+    z_dist: i64,
+) -> HashSet<i64> {
     let mut res: HashSet<i64> = HashSet::new();
     let border_z = match z_dist {
-        1 => bricks[bid].iter().map(|(_, _, z)| z).max().unwrap(),
-        -1 => bricks[bid].iter().map(|(_, _, z)| z).min().unwrap(),
-        _ => panic!("Invalid z_dist")
+        1 => bricks[bid].high_corner.z,
+        -1 => bricks[bid].low_corner.z,
+        _ => panic!("Invalid z_dist"),
     };
-    let border_z_cubes_moved = bricks[bid].iter()
-        .filter(|(_, _, z)| *z == *border_z)
-        .map(|(x, y, z)| (*x, *y, *z + z_dist))
-        .collect::<Vec<(i64, i64, i64)>>();
-    let neighbor_brick_ids = bricks_by_z.get(&((*border_z + z_dist) as u16));
+    let neighbor_brick_ids = bricks_by_z.get(&((border_z + z_dist) as u16));
     if neighbor_brick_ids.is_none() {
         return res;
     }
+    let mut moved_brick = bricks[bid].clone();
+    match z_dist {
+        1 => moved_brick.move_up(),
+        -1 => moved_brick.move_down(),
+        _ => panic!("Invalid z_dist"),
+    };
+
     for neighbor_brick_id in neighbor_brick_ids.unwrap() {
         let neighbor_brick = &bricks[*neighbor_brick_id as usize];
-        if neighbor_brick.iter().any(|(x, y, z)| {
-            border_z_cubes_moved.iter().any(|(mx, my, mz)| {
-                x == mx && y == my && z == mz
-            })
-        }) {
+        if neighbor_brick.crosses(&moved_brick) {
             res.insert(*neighbor_brick_id);
         }
     }
