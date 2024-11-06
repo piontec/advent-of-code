@@ -1,4 +1,5 @@
 use crate::DayTask;
+use crossbeam_channel::{unbounded, Receiver};
 use itertools::Itertools;
 use num::Signed;
 use std::{
@@ -155,8 +156,22 @@ impl DayTask<i64> for Task {
         move_down_all(&mut bricks);
 
         let mut total_moved = 0;
+        let (in_tx, in_rx) = unbounded();
+        let (out_tx, out_rx) = unbounded();
+        let thread_count = 24;
+        for _ in 0..thread_count {
+            let my_in_rx = in_rx.clone();
+            let my_out_tx = out_tx.clone();
+            std::thread::spawn(move || {
+                let mut moved = 0;
+                while let Ok(mut new_bricks) = my_in_rx.recv() {
+                    moved += move_down_all(&mut new_bricks).len() as i64;
+                }
+                my_out_tx.send(moved).unwrap();
+            });
+        }
         for bid in 0..bricks.len() {
-            let mut new_bricks: Vec<Cube<i64>> = (&bricks)
+            let new_bricks: Vec<Cube<i64>> = (&bricks)
                 .iter()
                 .enumerate()
                 .filter_map(|(id, b)| {
@@ -166,8 +181,11 @@ impl DayTask<i64> for Task {
                     Some(b.clone())
                 })
                 .collect();
-            let moved_bricks_ids = move_down_all(&mut new_bricks);
-            total_moved += moved_bricks_ids.len() as i64;
+            in_tx.send(new_bricks).unwrap();
+        }
+        drop(in_tx);
+        for _ in 0..thread_count {
+            total_moved += out_rx.recv().unwrap();
         }
         total_moved
     }
