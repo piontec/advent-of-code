@@ -45,7 +45,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part1_test_result(&self) -> i64 {
-        todo!()
+        94
     }
 
     fn get_part2_test_result(&self) -> i64 {
@@ -59,10 +59,9 @@ impl DayTask<i64> for Task {
             .collect();
         let start = Point2D::new(map[0].iter().position(|c| *c == '.').unwrap() as isize, 0);
         let end = Point2D::new(
-            map[0].iter().position(|c| *c == '.').unwrap() as isize,
+            map[map.len() - 1].iter().position(|c| *c == '.').unwrap() as isize,
             map.len() as isize - 1,
         );
-
         let mut visited: HashSet<Point2D<isize>> = HashSet::new();
         let mut to_check = vec![(start, Point2D::new(start.x, 1))];
         let mut edges: HashMap<(Point2D<isize>, Point2D<isize>), usize> = HashMap::new();
@@ -72,14 +71,26 @@ impl DayTask<i64> for Task {
             let mut edge_length = 0;
             let mut y: isize;
             let mut x: isize;
+            let mut prev_y: isize;
+            let mut prev_x: isize;
+            (prev_y, prev_x) = (start_nodes.0.y, start_nodes.0.x);
             (y, x) = (start_nodes.1.y, start_nodes.1.x);
-            visited.insert(start_nodes.0);
             let mut found_slope = false;
-            let mut next: Vec<Point2D<isize>>;
+            let mut next: Vec<Point2D<isize>> = vec![];
+            let mut neighbors: Vec<Point2D<isize>> = vec![];
+            let mut correct_path = true;
             loop {
-                visited.insert(Point2D::new(x, y));
+                visited.insert(Point2D::new(prev_x, prev_y));
                 edge_length += 1;
                 if map[y as usize][x as usize] != '.' {
+                    if (prev_x < x && map[y as usize][x as usize] != '>')
+                        || (prev_x > x && map[y as usize][x as usize] != '<')
+                        || (prev_y < y && map[y as usize][x as usize] != 'v')
+                        || (prev_y > y && map[y as usize][x as usize] != '^')
+                    {
+                        correct_path = false;
+                        break;
+                    }
                     found_slope = true;
                     next = match map[y as usize][x as usize] {
                         '>' => vec![Point2D::new(x + 1, y)],
@@ -87,11 +98,10 @@ impl DayTask<i64> for Task {
                         '^' => vec![Point2D::new(x, y - 1)],
                         'v' => vec![Point2D::new(x, y + 1)],
                         _ => panic!("Invalid char"),
-                        
                     }
                 }
                 else {
-                    next = vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+                    neighbors = vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
                         .iter()
                         .filter(|(nx, ny)| {
                             *ny >= 0
@@ -99,22 +109,34 @@ impl DayTask<i64> for Task {
                                 && *nx >= 0
                                 && *nx < map[0].len() as isize
                                 && map[*ny as usize][*nx as usize] != '#'
-                                && !visited.contains(&Point2D::new(*nx, *ny))
                         })
                         .map(|(nx, ny)| Point2D::new(*nx, *ny))
                         .collect();
+                    next = neighbors.iter()
+                        .filter(|p| !visited.contains(p))
+                        .map(|p| *p)
+                        .collect();
                 }
                 // if we can choose multiple paths or there's no next (we're at dest)
-                if next.len() > 1 || next.len() == 0 {
+                if neighbors.len() >= 3 || next.len() == 0 {
                     break;
                 }
+                prev_y = y;
+                prev_x = x;
                 y = next[0].y as isize;
                 x = next[0].x as isize;
             }
+            if !correct_path {
+                continue;
+            }
             assert!(found_slope);
+            visited.insert(Point2D::new(x, y));
             edges.insert((start_nodes.0, Point2D::new(x, y)), edge_length);
             for n in next {
-                to_check.push((Point2D::new(x, y), n));
+                let new_start = (Point2D::new(x, y), n);
+                if !to_check.contains(&new_start) {
+                    to_check.push(new_start);
+                }
             }
         }
 
@@ -133,7 +155,8 @@ impl DayTask<i64> for Task {
                     edges
                         .keys()
                         .filter(|(a, b)| b == **n && !costs.contains_key(a))
-                        .count() == 0)
+                        .count() == 0
+                    && !costs.contains_key(*n))
                 .map(|n| *n)
                 .collect();
             for n in next_nodes {
