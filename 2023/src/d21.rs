@@ -1,4 +1,4 @@
-use crate::DayTask;
+use crate::{common::Map, DayTask};
 use std::{collections::{HashMap, HashSet}, path::Iter};
 
 pub struct Task;
@@ -73,34 +73,4 @@ fn do_steps(map: &Map<i32, char>, start: (i32, i32), steps: i32) -> Vec<(i32, i3
         current_pos = new_pos.into_iter().collect();
     }
     current_pos
-}
-
-pub struct Map<K, V> {
-    pub map: HashMap<(K, K), V>,
-}
-
-// TODO: make a library for this
-impl Map<i32, char> {
-    fn new() -> Self {
-        Self {
-            map: HashMap::new(),
-        }
-    }
-    fn parse_map(lines: &Vec<String>) -> Self{
-        let mut map = Self::new();
-        lines.iter().enumerate().for_each(|(y, line)| {
-            line.chars().enumerate().for_each(|(x, c)| {
-                map.map.insert((y as i32, x as i32), c);
-            });
-        });
-        map
-    }
-
-    fn find(&self, c: char) -> Vec<&(i32, i32)> {
-        self.map
-            .iter()
-            .filter(|(_, &v)| v == c)
-            .map(|(k, _)| k)
-            .collect::<Vec<&(i32, i32)>>()
-    }
 }

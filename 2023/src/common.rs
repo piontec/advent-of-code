@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::{collections::HashMap, ops::{Add, AddAssign, Sub, SubAssign}};
 
 use num::Signed;
 
@@ -127,4 +127,34 @@ pub fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
         result.push(row);
     }
     result
+}
+
+pub struct Map<K, V> {
+    pub map: HashMap<(K, K), V>,
+}
+
+// TODO: make a library for this
+impl Map<i32, char> {
+    fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+        }
+    }
+    pub fn parse_map(lines: &Vec<String>) -> Self{
+        let mut map = Self::new();
+        lines.iter().enumerate().for_each(|(y, line)| {
+            line.chars().enumerate().for_each(|(x, c)| {
+                map.map.insert((y as i32, x as i32), c);
+            });
+        });
+        map
+    }
+
+    pub fn find(&self, c: char) -> Vec<&(i32, i32)> {
+        self.map
+            .iter()
+            .filter(|(_, &v)| v == c)
+            .map(|(k, _)| k)
+            .collect::<Vec<&(i32, i32)>>()
+    }
 }
