@@ -53,13 +53,16 @@ impl DayTask<i64> for Task {
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let (map, start, end) = parse(lines);
-        let edges = find_edges(start, map);
+        let edges = find_edges(start, map, true);
 
-        find_longest_path(edges, start, end)
+        find_directed_longest_path(edges, start, end)
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
+        let (map, start, end) = parse(lines);
+        let edges = find_edges(start, map, false);
+
+        find_undirected_longest_path(edges, start, end)
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -71,7 +74,7 @@ impl DayTask<i64> for Task {
     }
 }
 
-fn find_edges(start: Point2D<isize>, map: Vec<Vec<char>>) -> HashMap<(Point2D<isize>, Point2D<isize>), usize> {
+fn find_edges(start: Point2D<isize>, map: Vec<Vec<char>>, respect_slopes: bool) -> HashMap<(Point2D<isize>, Point2D<isize>), usize> {
     let mut visited: HashSet<Point2D<isize>> = HashSet::new();
     let mut to_check = vec![(start, Point2D::new(start.x, 1))];
     let mut edges: HashMap<(Point2D<isize>, Point2D<isize>), usize> = HashMap::new();
@@ -85,14 +88,13 @@ fn find_edges(start: Point2D<isize>, map: Vec<Vec<char>>) -> HashMap<(Point2D<is
         let mut prev_x: isize;
         (prev_y, prev_x) = (start_nodes.0.y, start_nodes.0.x);
         (y, x) = (start_nodes.1.y, start_nodes.1.x);
-        let mut found_slope = false;
         let mut next: Vec<Point2D<isize>> = vec![];
         let mut neighbors: Vec<Point2D<isize>> = vec![];
         let mut correct_path = true;
         loop {
             visited.insert(Point2D::new(prev_x, prev_y));
             edge_length += 1;
-            if map[y as usize][x as usize] != '.' {
+            if respect_slopes && map[y as usize][x as usize] != '.' {
                 if (prev_x < x && map[y as usize][x as usize] != '>')
                     || (prev_x > x && map[y as usize][x as usize] != '<')
                     || (prev_y < y && map[y as usize][x as usize] != 'v')
@@ -101,7 +103,6 @@ fn find_edges(start: Point2D<isize>, map: Vec<Vec<char>>) -> HashMap<(Point2D<is
                     correct_path = false;
                     break;
                 }
-                found_slope = true;
                 next = match map[y as usize][x as usize] {
                     '>' => vec![Point2D::new(x + 1, y)],
                     '<' => vec![Point2D::new(x - 1, y)],
@@ -119,6 +120,7 @@ fn find_edges(start: Point2D<isize>, map: Vec<Vec<char>>) -> HashMap<(Point2D<is
                             && *nx >= 0
                             && *nx < map[0].len() as isize
                             && map[*ny as usize][*nx as usize] != '#'
+                            && !(nx == &start_nodes.0.x && ny == &start_nodes.0.y)
                     })
                     .map(|(nx, ny)| Point2D::new(*nx, *ny))
                     .collect();
@@ -136,12 +138,21 @@ fn find_edges(start: Point2D<isize>, map: Vec<Vec<char>>) -> HashMap<(Point2D<is
             y = next[0].y as isize;
             x = next[0].x as isize;
         }
-        if !correct_path {
+        if !correct_path || edge_length <= 1 {
             continue;
         }
-        assert!(found_slope);
-        visited.insert(Point2D::new(x, y));
-        edges.insert((start_nodes.0, Point2D::new(x, y)), edge_length);
+        // if !respect_slopes {
+            // visited.insert(Point2D::new(x, y));
+        // }
+        let end_node = Point2D::new(x, y);
+        if !respect_slopes { 
+            if !edges.contains_key(&(start_nodes.0, end_node)) && !edges.contains_key(&(end_node, start_nodes.0)) {
+                edges.insert((start_nodes.0, end_node), edge_length);
+            }
+        }
+        else {
+            edges.insert((start_nodes.0, end_node), edge_length);
+        }
         for n in next {
             let new_start = (Point2D::new(x, y), n);
             if !to_check.contains(&new_start) {
@@ -165,7 +176,7 @@ fn parse(lines: &Vec<String>) -> (Vec<Vec<char>>, Point2D<isize>, Point2D<isize>
     (map, start, end)
 }
 
-fn find_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), usize>, start: Point2D<isize>, end: Point2D<isize>) -> i64 {
+fn find_directed_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), usize>, start: Point2D<isize>, end: Point2D<isize>) -> i64 {
     let nodes = edges
         .keys()
         .map(|(a, b)| vec![a, b])
@@ -197,4 +208,34 @@ fn find_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), usize>, st
     }
 
     costs[&end] as i64
+}
+
+fn find_undirected_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), usize>, start: Point2D<isize>, end: Point2D<isize>) -> i64 {
+    let mut to_check   = vec![(start, HashSet::<Point2D<isize>>::new(), 0)];
+    let mut max_path = 0;
+    while to_check.len() > 0 {
+        let (node, path, length) = to_check.remove(0);
+        if node == end {
+            if length > max_path {
+                max_path = length;
+            }
+            continue;
+        }
+        let next_edges = edges
+            .keys()
+            .filter(|(a, b)| a == &node || b == &node)
+            .collect::<Vec<_>>();
+        for e in next_edges {
+            let next_node = if e.0 == node { e.1 } else { e.0 };
+            if path.contains(&next_node) {
+                continue;
+            }
+            let mut new_path = path.clone();
+            new_path.insert(next_node);
+            let next_node = if e.0 == node { e.1 } else { e.0 };
+            let new_length = length + edges[e];
+            to_check.push((next_node, new_path, new_length));
+        }
+    }
+    max_path as i64
 }
