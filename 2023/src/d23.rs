@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::{common::Point2D, DayTask};
 use std::{
     collections::{HashMap, HashSet},
@@ -213,6 +215,18 @@ fn find_directed_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), u
 fn find_undirected_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), usize>, start: Point2D<isize>, end: Point2D<isize>) -> i64 {
     let mut to_check   = vec![(start, HashSet::<Point2D<isize>>::new(), 0)];
     let mut max_path = 0;
+    let node_to_edges = edges
+        .keys()
+        .fold(HashMap::new(), |mut acc, (a, b)| {
+            let cost = if edges.keys().contains(&(*a, *b)) {
+                edges[&(*a, *b)]
+            } else {
+                edges[&(*b, *a)]
+            };
+            acc.entry(*a).or_insert(vec![]).push((*b, cost));
+            acc.entry(*b).or_insert(vec![]).push((*a, cost));
+            acc
+        });
     while to_check.len() > 0 {
         let (node, path, length) = to_check.remove(0);
         if node == end {
@@ -221,21 +235,28 @@ fn find_undirected_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>),
             }
             continue;
         }
-        let next_edges = edges
-            .keys()
-            .filter(|(a, b)| a == &node || b == &node)
-            .collect::<Vec<_>>();
-        for e in next_edges {
-            let next_node = if e.0 == node { e.1 } else { e.0 };
+        for (next_node, cost) in node_to_edges[&node].iter() {
             if path.contains(&next_node) {
                 continue;
             }
             let mut new_path = path.clone();
-            new_path.insert(next_node);
-            let next_node = if e.0 == node { e.1 } else { e.0 };
-            let new_length = length + edges[e];
-            to_check.push((next_node, new_path, new_length));
+            new_path.insert(node);
+            to_check.push((next_node.clone(), new_path, length + cost));
         }
     }
     max_path as i64
 }
+        // let (in_tx, in_rx) = unbounded();
+        // let (out_tx, out_rx) = unbounded();
+        // let thread_count = 24;
+        // for _ in 0..thread_count {
+        //     let my_in_rx = in_rx.clone();
+        //     let my_out_tx = out_tx.clone();
+        //     std::thread::spawn(move || {
+        //         let mut moved = 0;
+        //         while let Ok(mut new_bricks) = my_in_rx.recv() {
+        //             moved += move_down_all(&mut new_bricks).len() as i64;
+        //         }
+        //         my_out_tx.send(moved).unwrap();
+        //     });
+        // }
