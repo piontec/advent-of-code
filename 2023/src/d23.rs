@@ -1,9 +1,10 @@
+use crossbeam_channel::{unbounded, Select};
 use itertools::Itertools;
 
 use crate::{common::Point2D, DayTask};
 use std::{
     collections::{HashMap, HashSet},
-    isize,
+    isize, thread, time::Duration,
 };
 
 pub struct Task;
@@ -72,7 +73,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(6286)
     }
 }
 
@@ -213,8 +214,6 @@ fn find_directed_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), u
 }
 
 fn find_undirected_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>), usize>, start: Point2D<isize>, end: Point2D<isize>) -> i64 {
-    let mut to_check   = vec![(start, HashSet::<Point2D<isize>>::new(), 0)];
-    let mut max_path = 0;
     let node_to_edges = edges
         .keys()
         .fold(HashMap::new(), |mut acc, (a, b)| {
@@ -227,36 +226,59 @@ fn find_undirected_longest_path(edges: HashMap<(Point2D<isize>, Point2D<isize>),
             acc.entry(*b).or_insert(vec![]).push((*a, cost));
             acc
         });
-    while to_check.len() > 0 {
-        let (node, path, length) = to_check.remove(0);
-        if node == end {
-            if length > max_path {
-                max_path = length;
-            }
-            continue;
+
+    let (in_tx, in_rx) = unbounded();
+    let (out_tx, out_rx) = unbounded();
+    let (end_tx, end_rx) = unbounded();
+    let thread_count = 20;
+    in_tx.send((start, HashSet::<Point2D<isize>>::new(), 0)).unwrap();
+    let mut longest = 0;
+    thread::scope(|s| {
+        for _ in 0..thread_count {
+            s.spawn(|| {
+                let my_in_rx = in_rx.clone();
+                let my_in_tx = in_tx.clone();
+                let my_out_tx = out_tx.clone();
+                let my_end_tx = end_tx.clone();
+                while let Ok((node, path, length)) = my_in_rx.recv_timeout(Duration::from_millis(1)) {
+                    if node == end {
+                        my_out_tx.send(length).unwrap();
+                    }
+                    for (next_node, cost) in node_to_edges[&node].iter() {
+                        if path.contains(&next_node) {
+                            continue;
+                        }
+                        let mut new_path = path.clone();
+                        new_path.insert(node);
+                        my_in_tx.send((next_node.clone(), new_path, length + cost)).unwrap();
+                    }
+                }
+                drop(my_out_tx);
+                my_end_tx.send(1).unwrap();
+            });
         }
-        for (next_node, cost) in node_to_edges[&node].iter() {
-            if path.contains(&next_node) {
-                continue;
-            }
-            let mut new_path = path.clone();
-            new_path.insert(node);
-            to_check.push((next_node.clone(), new_path, length + cost));
+        let mut finished = 0;
+        let listen_list = vec![&out_rx, &end_rx];
+        let mut sel = Select::new();
+        for r in listen_list.iter() {
+            sel.recv(r);
         }
-    }
-    max_path as i64
+        loop {
+            let op = sel.select();
+            let index = op.index();
+            let msg = op.recv(&listen_list[index]);
+            if index == 0 {
+                let length = msg.unwrap();
+                if length > longest {
+                    longest = length;
+                }
+            } else {
+                finished += 1;
+                if finished == thread_count {
+                    break;
+                }
+            }
+        }
+    });
+    longest as i64
 }
-        // let (in_tx, in_rx) = unbounded();
-        // let (out_tx, out_rx) = unbounded();
-        // let thread_count = 24;
-        // for _ in 0..thread_count {
-        //     let my_in_rx = in_rx.clone();
-        //     let my_out_tx = out_tx.clone();
-        //     std::thread::spawn(move || {
-        //         let mut moved = 0;
-        //         while let Ok(mut new_bricks) = my_in_rx.recv() {
-        //             moved += move_down_all(&mut new_bricks).len() as i64;
-        //         }
-        //         my_out_tx.send(moved).unwrap();
-        //     });
-        // }
