@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ops::{Add, AddAssign, Sub, SubAssign}};
 
-use num::Signed;
+use num::{Num, Signed};
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub struct Point2D<T>
@@ -33,7 +33,7 @@ where
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Point3D<T: Signed> {
+pub struct Point3D<T: Num> {
     pub x: T,
     pub y: T,
     pub z: T,
@@ -41,7 +41,7 @@ pub struct Point3D<T: Signed> {
 
 impl<T> Point3D<T>
 where
-    T: Signed,
+    T: Num,
 {
     pub fn new(x: T, y: T, z: T) -> Self {
         Self { x, y, z }
@@ -49,14 +49,14 @@ where
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Cube<T: Signed> {
+pub struct Cube<T: Num> {
     pub low_corner: Point3D<T>,
     pub high_corner: Point3D<T>,
 }
 
 impl<T> Cube<T>
 where
-    T: Signed
+    T: Num
         + Eq
         + Ord
         + Copy
