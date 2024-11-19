@@ -3,7 +3,7 @@ use crate::{
     DayTask,
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     path::Iter,
 };
 
@@ -46,8 +46,13 @@ impl DayTask<i64> for Task {
         let map = MapHashMap::parse_map(lines);
         let start = map.find('S')[0];
         let steps = if is_test { 6 } else { 64 };
-        let positions = do_steps(&map, start.clone(), steps);
-        positions.len() as i64
+        let shortest_paths = bfs_to_all(&map, *start);
+        let gardens = shortest_paths
+            .map
+            .iter()
+            .filter(|(_, &s)| s <= steps && s % 2 == 0)
+            .count();
+        gardens as i64
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -63,30 +68,30 @@ impl DayTask<i64> for Task {
     }
 }
 
-fn bfs_to_all(map: &MapHashMap<i32, char>, start: (i32, i32)) -> Vec<Point2D<i32>> {
-    todo!()
-}
-
-fn do_steps(map: &MapHashMap<i32, char>, start: Point2D<i32>, steps: i32) -> Vec<Point2D<i32>> {
-    let mut current_pos = vec![start];
-    for _ in 0..steps {
-        let mut new_pos = HashSet::new();
-        for pos in current_pos {
-            let (y, x) = (pos.y, pos.x);
-            for next in [
-                Point2D::new(x, y - 1),
-                Point2D::new(x, y + 1),
-                Point2D::new(x - 1, y),
-                Point2D::new(x + 1, y),
-            ]
-            .iter()
+fn bfs_to_all(map: &MapHashMap<i32, char>, start: Point2D<i32>) -> MapHashMap<i32, i32> {
+    let mut to_visit = VecDeque::from([(start, 0)]);
+    let mut visited: MapHashMap<i32, i32> = MapHashMap::new();
+    while let Some((pos, steps)) = to_visit.pop_front() {
+        if visited.map.contains_key(&pos) {
+            continue;
+        }
+        visited.map.insert(pos, steps);
+        let (y, x) = (pos.y, pos.x);
+        for next in [
+            Point2D::new(x, y - 1),
+            Point2D::new(x, y + 1),
+            Point2D::new(x - 1, y),
+            Point2D::new(x + 1, y),
+        ]
+        .iter()
+        {
+            if map.map.contains_key(&next)
+                && map.map[next] != '#'
+                && !visited.map.contains_key(&next)
             {
-                if map.map.contains_key(&next) && map.map[&next] != '#' {
-                    new_pos.insert(*next);
-                }
+                to_visit.push_back((*next, steps + 1));
             }
         }
-        current_pos = new_pos.into_iter().collect();
     }
-    current_pos
+    visited
 }

@@ -136,16 +136,22 @@ pub fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
     result
 }
 
-pub struct MapHashMap<K, V> where K: Num {
+pub struct MapHashMap<K, V>
+where
+    K: Num,
+{
     pub map: HashMap<Point2D<K>, V>,
 }
 
-impl MapHashMap<i32, char> {
-    fn new() -> Self {
+impl<V> MapHashMap<i32, V> {
+    pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
     }
+}
+
+impl MapHashMap<i32, char> {
     pub fn parse_map(lines: &Vec<String>) -> Self {
         let mut map = Self::new();
         lines.iter().enumerate().for_each(|(y, line)| {
