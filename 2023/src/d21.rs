@@ -1,5 +1,11 @@
-use crate::{common::Map, DayTask};
-use std::{collections::{HashMap, HashSet}, path::Iter};
+use crate::{
+    common::{MapHashMap, Point2D},
+    DayTask,
+};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Iter,
+};
 
 pub struct Task;
 
@@ -16,7 +22,6 @@ const TI: &str = "...........
 ...........";
 
 impl DayTask<i64> for Task {
-
     fn day_no(&self) -> u8 {
         21
     }
@@ -38,9 +43,9 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p1(&self, lines: &Vec<String>, is_test: bool) -> i64 {
-        let map = Map::parse_map(lines);
+        let map = MapHashMap::parse_map(lines);
         let start = map.find('S')[0];
-        let steps = if is_test { 6 } else {64};
+        let steps = if is_test { 6 } else { 64 };
         let positions = do_steps(&map, start.clone(), steps);
         positions.len() as i64
     }
@@ -50,7 +55,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(3746)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
@@ -58,13 +63,24 @@ impl DayTask<i64> for Task {
     }
 }
 
-fn do_steps(map: &Map<i32, char>, start: (i32, i32), steps: i32) -> Vec<(i32, i32)> {
+fn bfs_to_all(map: &MapHashMap<i32, char>, start: (i32, i32)) -> Vec<Point2D<i32>> {
+    todo!()
+}
+
+fn do_steps(map: &MapHashMap<i32, char>, start: Point2D<i32>, steps: i32) -> Vec<Point2D<i32>> {
     let mut current_pos = vec![start];
     for _ in 0..steps {
         let mut new_pos = HashSet::new();
         for pos in current_pos {
-            let (y, x) = pos;
-            for next in [(y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)].iter() {
+            let (y, x) = (pos.y, pos.x);
+            for next in [
+                Point2D::new(x, y - 1),
+                Point2D::new(x, y + 1),
+                Point2D::new(x - 1, y),
+                Point2D::new(x + 1, y),
+            ]
+            .iter()
+            {
                 if map.map.contains_key(&next) && map.map[&next] != '#' {
                     new_pos.insert(*next);
                 }

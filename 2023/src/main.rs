@@ -117,9 +117,9 @@ fn main() {
     // d18::Task.main();
     // d19::Task.main();
     // d20::Task.main();
-    // d21::Task.main();
+    d21::Task.main();
     // d22::Task.main();
     // d23::Task.main();
     // d24::Task.main();
-    d25::Task.main();
+    // d25::Task.main();
 }
