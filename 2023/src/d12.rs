@@ -1,3 +1,5 @@
+use memoize::memoize;
+
 use crate::DayTask;
 
 pub struct Task;
@@ -33,7 +35,18 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
-        lines.iter().map(|line| count_permutations(line)).sum()
+        lines
+            .iter()
+            .map(|line| {
+                let (chars_str, counts_str) = line.split_once(" ").unwrap();
+                let expected_counts: Vec<u8> = counts_str
+                    .split(",")
+                    .map(|s| s.parse::<u8>().unwrap())
+                    .collect();
+                let chars: String = String::from(chars_str);
+                count_recursive(chars, expected_counts)
+            })
+            .sum::<usize>() as i64
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -49,12 +62,22 @@ impl DayTask<i64> for Task {
                 res
             })
             .collect();
-        result.iter().map(|line| count_permutations(&line)).sum()
+        result
+            .iter()
+            .map(|line| {
+                let (chars_str, counts_str) = line.split_once(" ").unwrap();
+                let expected_counts: Vec<u8> = counts_str
+                    .split(",")
+                    .map(|s| s.parse::<u8>().unwrap())
+                    .collect();
+                let chars: String = String::from(chars_str);
+                count_recursive(chars, expected_counts)
+            })
+            .sum::<usize>() as i64
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        // Some(7286)
-        None
+        Some(7286)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
@@ -62,72 +85,44 @@ impl DayTask<i64> for Task {
     }
 }
 
-fn count_permutations(line: &String) -> i64 {
-    let (chars_str, counts_str) = line.split_once(" ").unwrap();
-    let expected_counts: Vec<usize> = counts_str.split(",").map(|s| s.parse::<usize>().unwrap()).collect();
-    let chars: String = String::from(chars_str);
-
-    let mut combinations = 0;
-    let mut to_check = Vec::new();
-    to_check.push((chars, expected_counts));
-
-    while to_check.len() > 0 {
-        let (to_check_chars, mut to_check_counts) = to_check.pop().unwrap();
-
-        match to_check_chars.chars().next().unwrap() {
-            '?' => {
-                let has = to_check_chars.char_indices().map(|(i, c)| {if i == 0 {'#'} else {c}}).collect();
-                let has_not = to_check_chars.char_indices().map(|(i, c)| {if i == 0 {'.'} else {c}}).collect();
-                let count_copy = to_check_counts.to_vec();
-                to_check.push((has, to_check_counts));
-                to_check.push((has_not, count_copy));
-            }
-            '#' => {
-                // we found a '#', but there are no more sections to match - failed match
-                if to_check_counts.len() == 0 {
-                    continue;
-                }
-                let mut last_hash_index = 0;
-                let mut last_hash_or_qm_index = 0;
-                for c in to_check_chars.chars() {
-                    if c == '#' { last_hash_index += 1; }
-                    if c == '#' || c == '?' { last_hash_or_qm_index += 1;} else {break;}
-                }
-                // we found a '#-or-?' group, but does it match the expected length?
-                if last_hash_index <= to_check_counts[0] && to_check_counts[0] <= last_hash_or_qm_index {
-                    if to_check_counts[0] == to_check_chars.len() {
-                        // exact match until the end of string
-                        combinations += 1;
-                        continue;
-                    } 
-                    // can be a match if a '.' can follow
-                    let next_one = to_check_chars.as_bytes()[to_check_counts[0] as usize] as char;
-                    if next_one == '.' || next_one == '?' {
-                        // all good, we have a match
-                        let len = to_check_counts.remove(0);
-                        let new_string = to_check_chars.chars().skip(len as usize + 1).collect::<String>();
-                        if to_check_counts.len() == 0 && (new_string.len() == 0 || new_string.chars().all(|c| c == '.')) {
-                            combinations += 1;
-                        }
-                        else if new_string.len() > 0 {
-                            to_check.push((new_string, to_check_counts));
-                        }
-                    }
-                }
-            }
-            '.' => {
-                let new_string = to_check_chars.trim_start_matches('.');
-                if new_string.len() == 0 {
-                    if to_check_counts.len() == 0 {
-                        combinations += 1;
-                    }
-                }
-                else {
-                    to_check.push((new_string.to_string(), to_check_counts));
-                }
-            }
-            _ => { panic!() }
-        }
+#[memoize]
+fn count_recursive(line: String, groups: Vec<u8>) -> usize {
+    // case: nothing left in "line", so it's OK only if "groups" is empty
+    if line.len() == 0 {
+        return if groups.len() == 0 { 1 } else { 0 };
     }
-    combinations
+    // case: nothing left in "groups", so it's OK only if "line" has no "#"
+    if groups.len() == 0 {
+        return if line.contains("#") { 0 } else { 1 };
+    }
+    // check first character
+    let c = line.chars().next().unwrap();
+    let rest = line[1..].to_string();
+    match c {
+        '.' => count_recursive(rest.trim_start_matches(".").to_string(), groups),
+        '?' => {
+            count_recursive(".".to_string() + &rest, groups.clone())
+                + count_recursive("#".to_string() + &rest, groups)
+        }
+        '#' => {
+            let expected = groups[0];
+            if line.len() >= expected as usize
+                && line.chars().take(expected as usize).all(|c| c != '.')
+                && (line.len() == expected as usize
+                    || line.chars().nth(expected as usize).unwrap() != '#')
+            {
+                // if the whole line ends with a block of "#"s and that's the last block we expect, we have a match
+                if line.len() == expected as usize {
+                    return if groups.len() == 1 { 1 } else { 0 };
+                }
+                // we add "+ 1" to skip the next char after a block of "#"s, as it might be the '?'
+                // we need to interpret as '.'
+                let new_groups = groups[1..].to_vec();
+                count_recursive(line[expected as usize + 1..].to_string(), new_groups)
+            } else {
+                0
+            }
+        }
+        _ => panic!("This shall not happen!"),
+    }
 }
