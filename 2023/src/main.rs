@@ -108,13 +108,13 @@ fn main() {
     // d9::Task.main();
     // d10::Task.main();
     // d11::Task.main();
-    d12::Task.main();
+    // d12::Task.main();
     // d13::Task.main();
     // d14::Task.main();
     // d15::Task.main();
     // d16::Task.main();
     // d17::Task.main();
-    // d18::Task.main();
+    d18::Task.main();
     // d19::Task.main();
     // d20::Task.main();
     // d21::Task.main();

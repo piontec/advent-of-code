@@ -29,6 +29,15 @@ where
     pub fn move_dxy(&self, dx: T, dy: T) -> Self {
         return Self::new(self.x + dx, self.y + dy);
     }
+
+    pub fn move_dir(&self, dir: Direction, steps: T) -> Point2D<T> {
+        match dir {
+            Direction::North => Point2D::new(self.x, self.y - steps),
+            Direction::East => Point2D::new(self.x + steps, self.y),
+            Direction::South => Point2D::new(self.x, self.y + steps),
+            Direction::West => Point2D::new(self.x - steps, self.y),
+        }
+    }
 }
 impl<T> Point2D<T>
 where
@@ -124,6 +133,18 @@ pub enum Direction {
     West,
 }
 
+impl Direction {
+    pub fn from_char(c: char) -> Self {
+        match c {
+            'N' | 'U' => Direction::North,
+            'E' | 'R' => Direction::East,
+            'S' | 'D' => Direction::South,
+            'W' | 'L' => Direction::West,
+            _ => panic!("Invalid direction char"),
+        }
+    }
+}
+
 pub fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
     let mut result = Vec::<Vec<T>>::new();
     for x in 0..array2d[0].len() {
@@ -168,5 +189,41 @@ impl MapHashMap<i32, char> {
             .filter(|(_, &v)| v == c)
             .map(|(k, _)| k)
             .collect::<Vec<&Point2D<i32>>>()
+    }
+}
+
+#[derive(Eq, PartialEq, Hash, Copy, Clone)]
+pub enum EdgeType {
+    Horizontal,
+    Vertical,
+    ULC,
+    URC,
+    DLC,
+    DRC,
+}
+
+impl EdgeType {
+    pub fn is_corner(&self) -> bool {
+        match self {
+            EdgeType::ULC => true,
+            EdgeType::URC => true,
+            EdgeType::DLC => true,
+            EdgeType::DRC => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_horizontal(&self) -> bool {
+        match self {
+            EdgeType::Horizontal => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_vertical(&self) -> bool {
+        match self {
+            EdgeType::Vertical => true,
+            _ => false,
+        }
     }
 }

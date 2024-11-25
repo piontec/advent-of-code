@@ -1,5 +1,9 @@
-use crate::{common::Point2D, DayTask};
-use std::collections::HashMap;
+use itertools::Itertools;
+
+use crate::{
+    common::{Direction, Point2D},
+    DayTask,
+};
 
 pub struct Task;
 
@@ -17,48 +21,6 @@ R 2 (#7807d2)
 U 3 (#a77fa3)
 L 2 (#015232)
 U 2 (#7a21e3)";
-
-#[derive(Eq, PartialEq, Hash, Copy, Clone)]
-enum EdgeType {
-    Horizontal,
-    Vertical,
-    ULC,
-    URC,
-    DLC,
-    DRC,
-}
-
-impl EdgeType {
-    fn is_corner(&self) -> bool {
-        match self {
-            EdgeType::ULC => true,
-            EdgeType::URC => true,
-            EdgeType::DLC => true,
-            EdgeType::DRC => true,
-            _ => false,
-        }
-    }
-
-    fn is_horizontal(&self) -> bool {
-        match self {
-            EdgeType::Horizontal => true,
-            _ => false,
-        }
-    }
-
-    fn is_vertical(&self) -> bool {
-        match self {
-            EdgeType::Vertical => true,
-            _ => false,
-        }
-    }
-}
-
-enum Tile {
-    Empty,
-    Edge(EdgeType),
-    Inner,
-}
 
 impl DayTask<i64> for Task {
     fn day_no(&self) -> u8 {
@@ -82,13 +44,11 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
-        let map = parse_map(lines, parse_line_part1);
-        count_inner(&map)
+        count_inner_new(lines, true)
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        let map = parse_map(lines, parse_line_part2);
-        count_inner(&map)
+        count_inner_new(lines, false)
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -122,116 +82,31 @@ fn parse_line_part2(line: &str) -> (char, i32) {
     (dir, steps)
 }
 
-fn parse_map(
-    lines: &Vec<String>,
-    parse_line: fn(&str) -> (char, i32),
-) -> HashMap<Point2D<i32>, Tile> {
-    let mut current_pos = Point2D::new(0, 0);
-    let mut first_dir: Option<char> = None;
-    let mut map: HashMap<Point2D<i32>, Tile> = HashMap::new();
-    let mut last_dir: Option<char> = None;
-    for line in lines {
-        let (dir, steps) = parse_line(line);
-        if last_dir.is_some_and(|ld| ld != dir) {
-            *map.get_mut(&current_pos).unwrap() = Tile::Edge(get_edge_type(last_dir.unwrap(), dir));
-        }
-        last_dir = Some(dir);
-        // we skip the point (0,0), so we should end up in it
-        for _ in 0..steps {
-            match dir {
-                'U' => {
-                    current_pos = current_pos.move_dxy(0, 1);
-                }
-                'D' => {
-                    current_pos = current_pos.move_dxy(0, -1);
-                }
-                'L' => {
-                    current_pos = current_pos.move_dxy(-1, 0);
-                }
-                'R' => {
-                    current_pos = current_pos.move_dxy(1, 0);
-                }
-                _ => panic!("Unknown direction"),
-            }
-            if first_dir.is_none() {
-                first_dir = Some(dir);
-            }
-            map.insert(
-                current_pos,
-                Tile::Edge(if ['U', 'D'].contains(&dir) {
-                    EdgeType::Vertical
-                } else {
-                    EdgeType::Horizontal
-                }),
-            );
-        }
+fn count_inner_new(lines: &Vec<String>, is_part1: bool) -> i64 {
+    let points = get_points_in_order(lines, is_part1);
+    let mut total = 0i64;
+    let mut border = 0;
+    for (p1, p2) in points.iter().tuple_windows() {
+        total += p1.x * p2.y - p2.x * p1.y;
+        border += p1.manhattan_distance(p2)
     }
-    *map.get_mut(&current_pos).unwrap() =
-        Tile::Edge(get_edge_type(last_dir.unwrap(), first_dir.unwrap()));
-
-    map
+    let area = total.abs() as f64 / 2f64;
+    // internal area + border length
+    let res = (area - 0.5 * border as f64 + 1f64) + border as f64;
+    res as i64
 }
 
-fn count_inner(map: &HashMap<Point2D<i32>, Tile>) -> i64 {
-    let mut count = 0;
-    let y_min = map.keys().map(|p| p.y).min().unwrap();
-    let y_max = map.keys().map(|p| p.y).max().unwrap();
-    let x_min = map.keys().map(|p| p.x).min().unwrap();
-    let x_max = map.keys().map(|p| p.x).max().unwrap();
-    let mut inside = false;
-    for y in y_min..=y_max {
-        let mut last_corner: Option<EdgeType> = None;
-        for x in x_min..=x_max {
-            if let Some(tile) = map.get(&Point2D::new(x, y)) {
-                match tile {
-                    Tile::Edge(et) => {
-                        if et.is_vertical() {
-                            inside = !inside;
-                        }
-                        if et.is_corner() {
-                            if last_corner.is_some() {
-                                let lc = last_corner.unwrap();
-                                if (lc == EdgeType::ULC && *et == EdgeType::DRC)
-                                    || (lc == EdgeType::DLC && *et == EdgeType::URC)
-                                {
-                                    inside = !inside;
-                                }
-                                last_corner = None;
-                            } else {
-                                last_corner = Some(*et);
-                            }
-                        }
-                        // and ignoring et.is_horizontal() as they don't change inside value
-                    }
-                    _ => {
-                        panic!("Unexpected tile")
-                    }
-                }
-                count += 1;
-                continue;
-            }
-            if inside {
-                count += 1;
-            }
-        }
-    }
-    count
-}
-
-fn get_edge_type(last_dir: char, dir: char) -> EdgeType {
-    match (last_dir, dir) {
-        ('U', 'L') => EdgeType::URC,
-        ('U', 'R') => EdgeType::ULC,
-        ('U', 'U') => EdgeType::Vertical,
-        ('D', 'L') => EdgeType::DRC,
-        ('D', 'R') => EdgeType::DLC,
-        ('D', 'D') => EdgeType::Vertical,
-        ('L', 'U') => EdgeType::DLC,
-        ('L', 'D') => EdgeType::ULC,
-        ('L', 'L') => EdgeType::Horizontal,
-        ('R', 'U') => EdgeType::DRC,
-        ('R', 'D') => EdgeType::URC,
-        ('R', 'R') => EdgeType::Horizontal,
-        _ => panic!("Unknown edge"),
-    }
+fn get_points_in_order(lines: &Vec<String>, use_part1_parser: bool) -> Vec<Point2D<i64>> {
+    let mut current_pos = Point2D::new(0i64, 0);
+    let mut points = vec![Point2D::new(0, 0)];
+    points.extend(lines.iter().map(|line| {
+        let (dir, steps) = if use_part1_parser {
+            parse_line_part1(line)
+        } else {
+            parse_line_part2(line)
+        };
+        current_pos = current_pos.move_dir(Direction::from_char(dir), steps as i64);
+        current_pos
+    }));
+    points
 }
