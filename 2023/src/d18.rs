@@ -56,7 +56,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(54058824661845)
     }
 }
 
@@ -83,6 +83,8 @@ fn parse_line_part2(line: &str) -> (char, i32) {
 }
 
 fn count_inner_new(lines: &Vec<String>, is_part1: bool) -> i64 {
+    // https://en.wikipedia.org/wiki/Shoelace_formula
+    // https://en.wikipedia.org/wiki/Pick%27s_theorem
     let points = get_points_in_order(lines, is_part1);
     let mut total = 0i64;
     let mut border = 0;
@@ -92,7 +94,7 @@ fn count_inner_new(lines: &Vec<String>, is_part1: bool) -> i64 {
     }
     let area = total.abs() as f64 / 2f64;
     // internal area + border length
-    let res = (area - 0.5 * border as f64 + 1f64) + border as f64;
+    let res = (area + 0.5 * border as f64 + 1f64) + border as f64;
     res as i64
 }
 
