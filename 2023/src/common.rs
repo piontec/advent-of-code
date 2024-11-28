@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    ops::{Add, AddAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Index, Sub, SubAssign},
 };
 
 use num::{Num, Signed};
@@ -22,8 +22,11 @@ where
         Self { x, y }
     }
 
-    pub fn in_range(&self, x_range: T, y_range: T) -> bool {
-        return self.x >= T::zero() && self.x < x_range && self.y >= T::zero() && self.y < y_range;
+    pub fn in_positive_range(&self, x_max_exclusive: T, y_max_exclusive: T) -> bool {
+        return self.x >= T::zero()
+            && self.x < x_max_exclusive
+            && self.y >= T::zero()
+            && self.y < y_max_exclusive;
     }
 
     pub fn move_dxy(&self, dx: T, dy: T) -> Self {
@@ -164,11 +167,22 @@ where
     pub map: HashMap<Point2D<K>, V>,
 }
 
-impl<V> MapHashMap<i32, V> {
+impl<K: Num, V> MapHashMap<K, V> {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
+    }
+}
+
+impl<K: Num, V> Index<Point2D<K>> for MapHashMap<K, V>
+where
+    K: Eq + std::hash::Hash,
+{
+    type Output = V;
+
+    fn index(&self, index: Point2D<K>) -> &Self::Output {
+        self.map.get(&index).unwrap()
     }
 }
 

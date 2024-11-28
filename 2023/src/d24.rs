@@ -13,7 +13,7 @@ const TI: &str = "19, 13, 30 @ -2,  1, -2
 20, 19, 15 @  1, -5, -3";
 
 struct Hailstone {
-    pos: Point3D<usize>,
+    pos: Point3D<isize>,
     speed: Point3D<isize>,
 }
 
@@ -35,37 +35,136 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> i64 {
-        todo!()
+        0
     }
 
     fn run_p1(&self, lines: &Vec<String>, is_test: bool) -> i64 {
-        let (min_range, max_range) = if is_test { (7usize, 27usize) } else { (200000000000000, 400000000000000) };
-        let mut hailstones = lines.iter().map(|line| {
-            let parts: Vec<&str> = line.split(" @ ").collect();
-            let pos_parts: Vec<&str> = parts[0].split(", ").collect();
-            let speed_parts: Vec<&str> = parts[1].split(", ").collect();
-            Hailstone {
-                pos: Point3D::new(
-                    pos_parts[0].trim().parse::<usize>().unwrap(),
-                    pos_parts[1].trim().parse::<usize>().unwrap(),
-                    pos_parts[2].trim().parse::<usize>().unwrap(),
-                ),
-                speed: Point3D::new(
-                    speed_parts[0].trim().parse::<isize>().unwrap(),
-                    speed_parts[1].trim().parse::<isize>().unwrap(),
-                    speed_parts[2].trim().parse::<isize>().unwrap(),
-                ),
-            }
-        }).collect::<Vec<Hailstone>>();
+        let (min_range, max_range) = if is_test {
+            (7usize, 27usize)
+        } else {
+            (200000000000000, 400000000000000)
+        };
+        let hailstones = parse_stones(lines);
         let count = (0..hailstones.len())
             .combinations(2)
-            .map(|pair| crosses(&hailstones[pair[0]], &hailstones[pair[1]], &min_range, &max_range) as i64)
+            .map(|pair| {
+                crosses(
+                    &hailstones[pair[0]],
+                    &hailstones[pair[1]],
+                    &min_range,
+                    &max_range,
+                ) as i64
+            })
             .sum();
         count
     }
 
-    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
+    fn run_p2(&self, lines: &Vec<String>, is_test: bool) -> i64 {
+        if is_test {
+            return 0;
+        }
+        // based on the great explanation here: https://pastebin.com/pnbxaCVu
+        // general idea: let's find 3 hails with the same speed in one axis
+        // now, let's move our point of reference to the first hailstone (no 0)
+        // Now, we know that the collision points of other 2 hailstones are on a
+        // straight line from us (stone 0). This means, that they are scaled vectors,
+        // so there exists a number m, that applies to coordinates of hail 1 will give
+        // coordinates of hail 2. This also means, that if we can divide all of the coordinates
+        // of hail 1 by a certain known number, such that afterwards z=1, then we do the same
+        // for hail 2 (its scaled z is also z=1), all of the coordinates (x and y) must be equal
+        // as well. Based on that, we can construct 2 equations where unknowns are only t1 and t2
+        // - time of hitting the stone. Once we have t1 and t2, we can calculate everything else.
+        // To get started, we need 2 steps: find such 3 stones and move everything to a frame
+        // of reference of the first stone.
+
+        let hailstones = parse_stones(lines);
+        let grouped_by_z = group_by_prop(&hailstones, |s| s.speed.z);
+        assert!(grouped_by_z.len() > 0);
+        let s0 = grouped_by_z[0].1[0];
+        let s1 = grouped_by_z[0].1[1];
+        let s2 = grouped_by_z[0].1[2];
+
+        // let's make relative stones, assuming s0 is at 0,0,0 and its speed is 0,0,0
+        let rs1 = Hailstone {
+            pos: Point3D::new(
+                s1.pos.x - s0.pos.x,
+                s1.pos.y - s0.pos.y,
+                s1.pos.z - s0.pos.z,
+            ),
+            speed: Point3D::new(
+                s1.speed.x - s0.speed.x,
+                s1.speed.y - s0.speed.y,
+                s1.speed.z - s0.speed.z,
+            ),
+        };
+        let rs2 = Hailstone {
+            pos: Point3D::new(
+                s2.pos.x - s0.pos.x,
+                s2.pos.y - s0.pos.y,
+                s2.pos.z - s0.pos.z,
+            ),
+            speed: Point3D::new(
+                s2.speed.x - s0.speed.x,
+                s2.speed.y - s0.speed.y,
+                s2.speed.z - s0.speed.z,
+            ),
+        };
+        assert!(rs1.speed.z == 0 && rs2.speed.z == 0);
+
+        // s1's collision is t1, which means its position at that time is
+        // rs1.pos.x + rs1.speed.x * t1
+        // rs1.pos.y + rs1.speed.y * t1
+        // rs1.pos.z + rs1.speed.z * t1 == rs1.pos.z
+
+        // s2's collision is t2, which means its position at that time is
+        // rs2.pos.x + rs2.speed.x * t2
+        // rs2.pos.y + rs2.speed.y * t2
+        // rs2.pos.z + rs2.speed.z * t2 == rs2.pos.z
+
+        // now, if we divide rs1's position by rs1.pos.z, and same for rs2, we should get the same position
+        // [1] (rs1.pos.x + rs1.speed.x * t1) / rs1.poz.z == (rs2.pos.x + rs2.speed.x * t2) / rs2.pos.z
+        // [2] (rs1.pos.y + rs1.speed.y * t1) / rs1.poz.z == (rs2.pos.y + rs2.speed.y * t2) / rs2.pos.z
+        // transforming the [2] one to get t1 gives us:
+        // rs1.pos.y / rs1.poz.z + rs1.speed.y * t1 / rs1.poz.z == rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z
+        // rs1.speed.y * t1 / rs1.poz.z == rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z - rs1.pos.y / rs1.poz.z
+        // t1 == (rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z - rs1.pos.y / rs1.poz.z) * rs1.poz.z / rs1.speed.y
+        // so, based on [1], t2 is
+        // t2 == (rs2.pos.x / rs2.poz.z + rs2.speed.x * t1 / rs2.poz.z - rs1.pos.x / rs1.poz.z) * rs1.poz.z / rs1.speed.x
+        // now to put this mess for t1 into the t2 equation
+        // t2 == (rs2.pos.x / rs2.poz.z + rs2.speed.x * ((rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z - rs1.pos.y / rs1.poz.z) * rs1.poz.z / rs1.speed.y) / rs2.poz.z - rs1.pos.x / rs1.poz.z) * rs1.poz.z / rs1.speed.x
+        // OK, I give up and switch to pen & paper...
+        let t2_num = rs2.pos.y * rs1.pos.z * rs1.speed.y + rs1.speed.x * rs1.pos.y * rs2.pos.z
+            - rs1.speed.x * rs2.pos.y * rs1.pos.z
+            - rs1.pos.x * rs2.pos.z * rs1.speed.y;
+        let t2 =
+            t2_num as f64 / (rs2.speed.y * rs1.pos.z as isize * (rs1.speed.x - rs1.speed.y)) as f64;
+        let t2 = t2 as isize;
+        let t1 = (rs2.pos.y * rs1.pos.z + rs2.speed.y * t2 * rs1.pos.z - rs1.pos.y * rs2.pos.z)
+            / (rs1.speed.y * rs2.pos.z);
+        // let's calculate collision points in the original frame of reference
+        let c1 = Point3D::new(
+            s0.pos.x + s0.speed.x * t1,
+            s0.pos.y + s0.speed.y * t1,
+            s0.pos.z + s0.speed.z * t1,
+        );
+        let c2 = Point3D::new(
+            s0.pos.x + s0.speed.x * t2 as isize,
+            s0.pos.y + s0.speed.y * t2 as isize,
+            s0.pos.z + s0.speed.z * t2 as isize,
+        );
+        // now we can calculate the speed of the rock based on where and when it will hit s1 and s2 in c1 and c2
+        let speed = Point3D::new(
+            (c2.x - c1.x) / (t2 - t1),
+            (c2.y - c1.y) / (t2 - t1),
+            (c2.z - c1.z) / (t2 - t1),
+        );
+        // finally, we can get rock's position at time 0 based on c1 and speed
+        let pos = Point3D::new(
+            c1.x - speed.x * t1,
+            c1.y - speed.y * t1,
+            c1.z - speed.z * t1,
+        );
+        (pos.x + pos.y + pos.z) as i64
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -75,6 +174,47 @@ impl DayTask<i64> for Task {
     fn get_part2_result(&self) -> Option<i64> {
         None
     }
+}
+
+fn group_by_prop<F>(hailstones: &Vec<Hailstone>, selector: F) -> Vec<(isize, Vec<&Hailstone>)>
+where
+    F: Fn(&Hailstone) -> isize,
+{
+    let grouped_by = hailstones
+        .iter()
+        .fold(HashMap::new(), |mut hm, stone| {
+            let key = selector(stone);
+            hm.entry(key).or_insert(Vec::new()).push(stone);
+            hm
+        })
+        .into_iter()
+        .filter(|(_, v)| v.len() >= 3)
+        .collect::<Vec<(isize, Vec<&Hailstone>)>>();
+    grouped_by
+}
+
+fn parse_stones(lines: &Vec<String>) -> Vec<Hailstone> {
+    let hailstones = lines
+        .iter()
+        .map(|line| {
+            let parts: Vec<&str> = line.split(" @ ").collect();
+            let pos_parts: Vec<&str> = parts[0].split(", ").collect();
+            let speed_parts: Vec<&str> = parts[1].split(", ").collect();
+            Hailstone {
+                pos: Point3D::new(
+                    pos_parts[0].trim().parse::<isize>().unwrap(),
+                    pos_parts[1].trim().parse::<isize>().unwrap(),
+                    pos_parts[2].trim().parse::<isize>().unwrap(),
+                ),
+                speed: Point3D::new(
+                    speed_parts[0].trim().parse::<isize>().unwrap(),
+                    speed_parts[1].trim().parse::<isize>().unwrap(),
+                    speed_parts[2].trim().parse::<isize>().unwrap(),
+                ),
+            }
+        })
+        .collect::<Vec<Hailstone>>();
+    hailstones
 }
 
 fn crosses(s1: &Hailstone, s2: &Hailstone, min_range: &usize, max_range: &usize) -> u8 {
@@ -87,15 +227,20 @@ fn crosses(s1: &Hailstone, s2: &Hailstone, min_range: &usize, max_range: &usize)
         return 0;
     }
     let (x, y) = find_intersection(a1, b1, a2, b2);
-    if x >= *min_range as f64 && x <= *max_range as f64 && y >= *min_range as f64 && y <= *max_range as f64 
-        && is_in_future(s1, x, y) && is_in_future(s2, x, y) {
+    if x >= *min_range as f64
+        && x <= *max_range as f64
+        && y >= *min_range as f64
+        && y <= *max_range as f64
+        && is_in_future(s1, x, y)
+        && is_in_future(s2, x, y)
+    {
         return 1;
     }
     return 0;
 }
 
 fn is_in_future(s: &Hailstone, x: f64, y: f64) -> bool {
-    abs(s.pos.x as isize + s.speed.x - x as isize) < abs(s.pos.x as isize - x as isize) 
+    abs(s.pos.x as isize + s.speed.x - x as isize) < abs(s.pos.x as isize - x as isize)
         && abs(s.pos.y as isize + s.speed.y - y as isize) < abs(s.pos.y as isize - y as isize)
 }
 

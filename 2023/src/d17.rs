@@ -192,7 +192,7 @@ fn get_next_states(
             current_state.pos.x + dxy.0 as i32 * steps as i32,
             current_state.pos.y + dxy.1 as i32 * steps as i32,
         );
-        if new_pos.in_range(map[0].len() as i32, map.len() as i32) {
+        if new_pos.in_positive_range(map[0].len() as i32, map.len() as i32) {
             let new_cost = current.cost
                 + (1..=steps)
                     .map(|i| {
@@ -203,10 +203,15 @@ fn get_next_states(
                     .sum::<usize>();
             res.push(StateCost {
                 state: State::new(
-                    new_pos, 
-                    dxy.0, 
-                    dxy.1, 
-                    if dxy == (current_state.dx, current_state.dy) { current_state.straight_line_steps + 1 } else { steps }),
+                    new_pos,
+                    dxy.0,
+                    dxy.1,
+                    if dxy == (current_state.dx, current_state.dy) {
+                        current_state.straight_line_steps + 1
+                    } else {
+                        steps
+                    },
+                ),
                 cost: new_cost,
             })
         }
