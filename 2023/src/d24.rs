@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use num::{abs, traits::float};
+use num::abs;
 
 use crate::{common::Point3D, DayTask};
 use std::collections::HashMap;
@@ -70,19 +70,19 @@ impl DayTask<i64> for Task {
         // straight line from us (stone 0). This means, that they are scaled vectors,
         // so there exists a number m, that applies to coordinates of hail 1 will give
         // coordinates of hail 2. This also means, that if we can divide all of the coordinates
-        // of hail 1 by a certain known number, such that afterwards z=1, then we do the same
-        // for hail 2 (its scaled z is also z=1), all of the coordinates (x and y) must be equal
+        // of hail 1 by a certain known number, such that afterwards y=1, then we do the same
+        // for hail 2 (its scaled y is also y=1), all of the coordinates (x and z) must be equal
         // as well. Based on that, we can construct 2 equations where unknowns are only t1 and t2
         // - time of hitting the stone. Once we have t1 and t2, we can calculate everything else.
         // To get started, we need 2 steps: find such 3 stones and move everything to a frame
         // of reference of the first stone.
 
         let hailstones = parse_stones(lines);
-        let grouped_by_z = group_by_prop(&hailstones, |s| s.speed.z);
-        assert!(grouped_by_z.len() > 0);
-        let s0 = grouped_by_z[0].1[0];
-        let s1 = grouped_by_z[0].1[1];
-        let s2 = grouped_by_z[0].1[2];
+        let grouped_by_y = group_by_prop(&hailstones, |s| s.speed.y);
+        assert!(grouped_by_y.len() > 0);
+        let s0 = grouped_by_y[1].1[0];
+        let s1 = grouped_by_y[1].1[1];
+        let s2 = grouped_by_y[1].1[2];
 
         // let's make relative stones, assuming s0 is at 0,0,0 and its speed is 0,0,0
         let rs1 = Hailstone {
@@ -109,43 +109,40 @@ impl DayTask<i64> for Task {
                 s2.speed.z - s0.speed.z,
             ),
         };
-        assert!(rs1.speed.z == 0 && rs2.speed.z == 0);
+        assert!(rs1.speed.y == 0 && rs2.speed.y == 0);
 
         // s1's collision is t1, which means its position at that time is
         // rs1.pos.x + rs1.speed.x * t1
-        // rs1.pos.y + rs1.speed.y * t1
-        // rs1.pos.z + rs1.speed.z * t1 == rs1.pos.z
+        // rs1.pos.y + rs1.speed.y * t1 == rs1.pos.y
+        // rs1.pos.z + rs1.speed.z * t1
 
         // s2's collision is t2, which means its position at that time is
         // rs2.pos.x + rs2.speed.x * t2
-        // rs2.pos.y + rs2.speed.y * t2
-        // rs2.pos.z + rs2.speed.z * t2 == rs2.pos.z
+        // rs2.pos.y + rs2.speed.y * t2 == rs2.pos.y
+        // rs2.pos.z + rs2.speed.z * t2
 
         // now, if we divide rs1's position by rs1.pos.z, and same for rs2, we should get the same position
-        // [1] (rs1.pos.x + rs1.speed.x * t1) / rs1.poz.z == (rs2.pos.x + rs2.speed.x * t2) / rs2.pos.z
-        // [2] (rs1.pos.y + rs1.speed.y * t1) / rs1.poz.z == (rs2.pos.y + rs2.speed.y * t2) / rs2.pos.z
+        // [1] (rs1.pos.x + rs1.speed.x * t1) / rs1.poz.y == (rs2.pos.x + rs2.speed.x * t2) / rs2.pos.y
+        // [2] (rs1.pos.z + rs1.speed.z * t1) / rs1.poz.y == (rs2.pos.z + rs2.speed.z * t2) / rs2.pos.y
         // transforming the [2] one to get t1 gives us:
-        // rs1.pos.y / rs1.poz.z + rs1.speed.y * t1 / rs1.poz.z == rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z
-        // rs1.speed.y * t1 / rs1.poz.z == rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z - rs1.pos.y / rs1.poz.z
-        // t1 == (rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z - rs1.pos.y / rs1.poz.z) * rs1.poz.z / rs1.speed.y
-        // so, based on [1], t2 is
-        // t2 == (rs2.pos.x / rs2.poz.z + rs2.speed.x * t1 / rs2.poz.z - rs1.pos.x / rs1.poz.z) * rs1.poz.z / rs1.speed.x
-        // now to put this mess for t1 into the t2 equation
-        // t2 == (rs2.pos.x / rs2.poz.z + rs2.speed.x * ((rs2.pos.y / rs2.poz.z + rs2.speed.y * t2 / rs2.poz.z - rs1.pos.y / rs1.poz.z) * rs1.poz.z / rs1.speed.y) / rs2.poz.z - rs1.pos.x / rs1.poz.z) * rs1.poz.z / rs1.speed.x
-        // OK, I give up and switch to pen & paper...
-        let t2_num = rs2.pos.y * rs1.pos.z * rs1.speed.y + rs1.speed.x * rs1.pos.y * rs2.pos.z
-            - rs1.speed.x * rs2.pos.y * rs1.pos.z
-            - rs1.pos.x * rs2.pos.z * rs1.speed.y;
-        let t2 =
-            t2_num as f64 / (rs2.speed.y * rs1.pos.z as isize * (rs1.speed.x - rs1.speed.y)) as f64;
-        let t2 = t2 as isize;
-        let t1 = (rs2.pos.y * rs1.pos.z + rs2.speed.y * t2 * rs1.pos.z - rs1.pos.y * rs2.pos.z)
-            / (rs1.speed.y * rs2.pos.z);
+        // OK, I give up here and switch to pen & paper...
+        let t2_num = rs2.pos.x as i128 * rs1.pos.y as i128 * rs1.speed.z as i128
+            + rs1.speed.x as i128 * rs1.pos.z as i128 * rs2.pos.y as i128
+            - rs1.speed.x as i128 * rs1.pos.y as i128 * rs2.pos.z as i128
+            - rs1.pos.x as i128 * rs2.pos.y as i128 * rs1.speed.z as i128;
+        let t2_den = rs1.pos.y as i128
+            * (rs1.speed.x as i128 * rs2.speed.z as i128
+                - rs1.speed.z as i128 * rs2.speed.x as i128);
+        let t2 = t2_num / t2_den as i128;
+        let t1 = (rs2.pos.z as i128 * rs1.pos.y as i128
+            + rs2.speed.z as i128 * t2 * rs1.pos.y as i128
+            - rs1.pos.z as i128 * rs2.pos.y as i128)
+            / (rs1.speed.z as i128 * rs2.pos.y as i128);
         // let's calculate collision points in the original frame of reference
         let c1 = Point3D::new(
-            s0.pos.x + s0.speed.x * t1,
-            s0.pos.y + s0.speed.y * t1,
-            s0.pos.z + s0.speed.z * t1,
+            s0.pos.x + s0.speed.x * t1 as isize,
+            s0.pos.y + s0.speed.y * t1 as isize,
+            s0.pos.z + s0.speed.z * t1 as isize,
         );
         let c2 = Point3D::new(
             s0.pos.x + s0.speed.x * t2 as isize,
@@ -154,15 +151,15 @@ impl DayTask<i64> for Task {
         );
         // now we can calculate the speed of the rock based on where and when it will hit s1 and s2 in c1 and c2
         let speed = Point3D::new(
-            (c2.x - c1.x) / (t2 - t1),
-            (c2.y - c1.y) / (t2 - t1),
-            (c2.z - c1.z) / (t2 - t1),
+            (c2.x - c1.x) / (t2 - t1) as isize,
+            (c2.y - c1.y) / (t2 - t1) as isize,
+            (c2.z - c1.z) / (t2 - t1) as isize,
         );
         // finally, we can get rock's position at time 0 based on c1 and speed
         let pos = Point3D::new(
-            c1.x - speed.x * t1,
-            c1.y - speed.y * t1,
-            c1.z - speed.z * t1,
+            c1.x - speed.x * t1 as isize,
+            c1.y - speed.y * t1 as isize,
+            c1.z - speed.z * t1 as isize,
         );
         (pos.x + pos.y + pos.z) as i64
     }
