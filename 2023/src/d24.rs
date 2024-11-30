@@ -140,14 +140,14 @@ impl DayTask<i64> for Task {
             / (rs1.speed.z as i128 * rs2.pos.y as i128);
         // let's calculate collision points in the original frame of reference
         let c1 = Point3D::new(
-            s0.pos.x + s0.speed.x * t1 as isize,
-            s0.pos.y + s0.speed.y * t1 as isize,
-            s0.pos.z + s0.speed.z * t1 as isize,
+            s1.pos.x + s1.speed.x * t1 as isize,
+            s1.pos.y + s1.speed.y * t1 as isize,
+            s1.pos.z + s1.speed.z * t1 as isize,
         );
         let c2 = Point3D::new(
-            s0.pos.x + s0.speed.x * t2 as isize,
-            s0.pos.y + s0.speed.y * t2 as isize,
-            s0.pos.z + s0.speed.z * t2 as isize,
+            s2.pos.x + s2.speed.x * t2 as isize,
+            s2.pos.y + s2.speed.y * t2 as isize,
+            s2.pos.z + s2.speed.z * t2 as isize,
         );
         // now we can calculate the speed of the rock based on where and when it will hit s1 and s2 in c1 and c2
         let speed = Point3D::new(
@@ -169,7 +169,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(1033770143421619)
     }
 }
 
