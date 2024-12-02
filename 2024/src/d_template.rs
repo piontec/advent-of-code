@@ -10,27 +10,19 @@ impl DayTask<i64> for Task {
         todo!()
     }
 
-    fn get_part1_test_input(&self) -> &'static str {
-        TI
+    fn get_part1_test_input(&self) -> Vec<&'static str> {
+        vec![TI]
     }
 
-    fn get_part2_test_input(&self) -> &'static str {
-        TI
+    fn get_part2_test_input(&self) -> Vec<&'static str> {
+        vec![TI]
     }
 
-    fn get_part1_test_result(&self) -> i64 {
+    fn get_part1_test_result(&self) -> Vec<i64> {
         todo!()
     }
 
-    fn get_part2_test_result(&self) -> i64 {
-        todo!()
-    }
-
-    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
-    }
-
-    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
+    fn get_part2_test_result(&self) -> Vec<i64> {
         todo!()
     }
 
@@ -40,5 +32,13 @@ impl DayTask<i64> for Task {
 
     fn get_part2_result(&self) -> Option<i64> {
         None
+    }
+
+    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
+        todo!()
+    }
+
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
+        todo!()
     }
 }

@@ -15,20 +15,28 @@ impl DayTask<i64> for Task {
         1
     }
 
-    fn get_part1_test_input(&self) -> &'static str {
-        TI
+    fn get_part1_test_input(&self) -> Vec<&'static str> {
+        vec![TI]
     }
 
-    fn get_part2_test_input(&self) -> &'static str {
-        TI
+    fn get_part2_test_input(&self) -> Vec<&'static str> {
+        vec![TI]
     }
 
-    fn get_part1_test_result(&self) -> i64 {
-        11
+    fn get_part1_test_result(&self) -> Vec<i64> {
+        vec![11]
     }
 
-    fn get_part2_test_result(&self) -> i64 {
-        31
+    fn get_part2_test_result(&self) -> Vec<i64> {
+        vec![31]
+    }
+
+    fn get_part1_result(&self) -> Option<i64> {
+        Some(1873376)
+    }
+
+    fn get_part2_result(&self) -> Option<i64> {
+        Some(18997088)
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -54,14 +62,6 @@ impl DayTask<i64> for Task {
             .map(|n| l2_freq.get(n).or(Some(&0)).unwrap() * n)
             .sum();
         sum
-    }
-
-    fn get_part1_result(&self) -> Option<i64> {
-        Some(1873376)
-    }
-
-    fn get_part2_result(&self) -> Option<i64> {
-        None
     }
 }
 

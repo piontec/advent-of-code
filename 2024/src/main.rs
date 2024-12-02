@@ -38,10 +38,12 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
 
         println!("[[Day {day} - part 1]]");
         let now = Instant::now();
-        assert_eq!(
-            self.run_p1(&self.get_test_data(self.get_part1_test_input()), true),
-            self.get_part1_test_result()
-        );
+        for i in 0..self.get_part1_test_input().len() {
+            assert_eq!(
+                self.run_p1(&self.get_test_data(self.get_part1_test_input()[i]), true),
+                self.get_part1_test_result()[i]
+            );
+        }
         println!("[test: {}ms]", now.elapsed().as_millis());
         let now = Instant::now();
         let result1 = self.run_p1(&lines, false);
@@ -53,10 +55,12 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
 
         println!("[[Day {day} - part 2]]");
         let now = Instant::now();
-        assert_eq!(
-            self.run_p2(&self.get_test_data(self.get_part2_test_input()), true),
-            self.get_part2_test_result()
-        );
+        for i in 0..self.get_part2_test_input().len() {
+            assert_eq!(
+                self.run_p2(&self.get_test_data(self.get_part2_test_input()[i]), true),
+                self.get_part2_test_result()[i]
+            );
+        }
         println!("[test: {}ms]", now.elapsed().as_millis());
         let now = Instant::now();
         let result2 = self.run_p2(&lines, false);
@@ -79,13 +83,13 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
         input.lines().map(String::from).collect()
     }
 
-    fn get_part1_test_input(&self) -> &'static str;
+    fn get_part1_test_input(&self) -> Vec<&'static str>;
 
-    fn get_part2_test_input(&self) -> &'static str;
+    fn get_part2_test_input(&self) -> Vec<&'static str>;
 
-    fn get_part1_test_result(&self) -> T;
+    fn get_part1_test_result(&self) -> Vec<T>;
 
-    fn get_part2_test_result(&self) -> T;
+    fn get_part2_test_result(&self) -> Vec<T>;
 
     fn run_p1(&self, lines: &Vec<String>, is_test: bool) -> T;
 
