@@ -10,7 +10,7 @@ mod d1;
 // mod d17;
 // mod d18;
 // mod d19;
-// mod d2;
+mod d2;
 // mod d20;
 // mod d21;
 // mod d22;
@@ -101,8 +101,8 @@ pub trait DayTask<T: Debug + Display + std::cmp::Eq> {
 }
 
 fn main() {
-    d1::Task.main();
-    // d2::Task.main();
+    // d1::Task.main();
+    d2::Task.main();
     // d3::Task.main();
     // d4::Task.main();
     // d5::Task.main();
