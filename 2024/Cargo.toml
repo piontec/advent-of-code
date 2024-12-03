@@ -10,4 +10,5 @@ crossbeam-channel = "0.5"
 itertools = "0.13.0"
 memoize = "0.4.2"
 num = "*"
+regex = "1.11.1"
 
