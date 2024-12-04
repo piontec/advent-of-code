@@ -1,7 +1,7 @@
 use regex::Regex;
 
 use crate::DayTask;
-use std::vec;
+use std::{collections::HashSet, vec};
 
 pub struct Task;
 
@@ -38,7 +38,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        todo!()
+        vec![9]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -46,7 +46,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(1815)
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -112,6 +112,52 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
+        let line_len = lines.len();
+        let char_lines = lines
+            .iter()
+            .map(|l| l.chars().collect::<Vec<char>>())
+            .collect::<Vec<Vec<char>>>();
+        assert!(char_lines.len() == char_lines[0].len());
+
+        let mut a_positions_dr: HashSet<(usize, usize)> = HashSet::new();
+        let mut a_positions_dl: HashSet<(usize, usize)> = HashSet::new();
+        for oi in 0..lines.len() {
+            for ii in 0..lines.len() {
+                let ddr_y = oi + ii;
+                let ddr_x = ii;
+                let ddr_y2 = ii;
+                let ddr_x2 = oi + ii;
+
+                for (y, x) in vec![(ddr_y, ddr_x), (ddr_y2, ddr_x2)] {
+                    if y < 1 || x < 1 || y >= line_len - 1 || x >= line_len - 1 {
+                        continue;
+                    }
+                    if char_lines[y][x] == 'A'
+                        && ((char_lines[y - 1][x - 1] == 'M' && char_lines[y + 1][x + 1] == 'S')
+                            || (char_lines[y - 1][x - 1] == 'S' && char_lines[y + 1][x + 1] == 'M'))
+                    {
+                        a_positions_dr.insert((y, x));
+                    }
+                }
+
+                let ddl_y = ii;
+                let ddl_x: isize = line_len as isize - (oi + ii) as isize - 1;
+                let ddl_y2 = oi + ii;
+                let ddl_x2 = line_len - ii - 1;
+                for (y, x) in vec![(ddl_y, ddl_x as usize), (ddl_y2, ddl_x2)] {
+                    if y < 1 || x < 1 || y >= line_len - 1 || x >= line_len - 1 {
+                        continue;
+                    }
+                    if char_lines[y][x] == 'A'
+                        && ((char_lines[y - 1][x + 1] == 'M' && char_lines[y + 1][x - 1] == 'S')
+                            || (char_lines[y - 1][x + 1] == 'S' && char_lines[y + 1][x - 1] == 'M'))
+                    {
+                        a_positions_dl.insert((y, x));
+                    }
+                }
+            }
+        }
+        let res = a_positions_dr.intersection(&a_positions_dl).count();
+        res as i64
     }
 }
