@@ -1,5 +1,8 @@
 use crate::DayTask;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 pub struct Task;
 
@@ -50,7 +53,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        todo!()
+        vec![123]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -58,7 +61,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(4944)
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -72,8 +75,46 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
+        let (rules, reverse_rules, cases) = parse(lines);
+        cases
+            .iter()
+            .filter(|c| is_valid(c, &rules, &reverse_rules).is_none())
+            .map(|c| order_pages(c, &rules))
+            .sum::<i64>()
     }
+}
+
+fn order_pages(case: &Vec<u8>, rules: &HashMap<u8, HashSet<u8>>) -> i64 {
+    let case_hs: HashSet<u8> = HashSet::from_iter(case.clone());
+    let mut edges: HashMap<u8, HashSet<u8>> = HashMap::from_iter(
+        case.iter()
+            .map(|c| {
+                let common = rules
+                    .get(c)
+                    .unwrap_or(&HashSet::new())
+                    .intersection(&case_hs)
+                    .map(|c| *c)
+                    .collect();
+                (*c, common)
+            })
+            .collect::<Vec<(u8, HashSet<u8>)>>(),
+    );
+    let mut no_incoming = case
+        .iter()
+        .filter(|c| !edges.values().any(|v| v.contains(c)))
+        .map(|c| *c)
+        .collect::<Vec<u8>>();
+    let mut res: Vec<u8> = Vec::new();
+    while !no_incoming.is_empty() {
+        let n = no_incoming.pop().unwrap();
+        res.push(n);
+        let next = edges.remove(&n).unwrap();
+        no_incoming.extend(
+            next.iter()
+                .filter(|n| !edges.values().any(|v| v.contains(n))),
+        );
+    }
+    res[res.len() / 2] as i64
 }
 
 fn parse(
