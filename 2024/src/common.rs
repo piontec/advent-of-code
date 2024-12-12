@@ -1,8 +1,10 @@
 use std::{
     collections::HashMap,
-    ops::{Add, AddAssign, Index, Sub, SubAssign},
+    ops::{Add, AddAssign, Index, IndexMut, Sub, SubAssign},
+    slice::SliceIndex,
 };
 
+use itertools::Position;
 use num::{Num, Signed};
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -146,6 +148,24 @@ impl Direction {
             _ => panic!("Invalid direction char"),
         }
     }
+
+    pub fn turn_cw(&self) -> Direction {
+        match self {
+            Direction::North => Direction::East,
+            Direction::East => Direction::South,
+            Direction::South => Direction::West,
+            Direction::West => Direction::North,
+        }
+    }
+
+    pub fn turn_ccw(&self) -> Direction {
+        match self {
+            Direction::North => Direction::West,
+            Direction::West => Direction::South,
+            Direction::South => Direction::East,
+            Direction::East => Direction::North,
+        }
+    }
 }
 
 pub fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
@@ -203,6 +223,87 @@ impl MapHashMap<i32, char> {
             .filter(|(_, &v)| v == c)
             .map(|(k, _)| k)
             .collect::<Vec<&Point2D<i32>>>()
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct MapVector<V> {
+    pub map: Vec<Vec<V>>,
+}
+
+impl MapVector<char> {
+    pub fn new(lines: &Vec<String>) -> Self {
+        let map = lines
+            .iter()
+            .map(|line| line.chars().collect::<Vec<char>>())
+            .collect::<Vec<Vec<char>>>();
+        Self { map }
+    }
+
+    pub fn find(&self, c: char) -> Vec<Point2D<usize>> {
+        let mut res = vec![];
+        for y in 0..self.map.len() {
+            for x in 0..self.map[y].len() {
+                if self.map[y][x] == c {
+                    res.push(Point2D::new(x, y));
+                }
+            }
+        }
+        res
+    }
+
+    pub fn find_in_front(
+        &self,
+        position: Point2D<isize>,
+        direction: Direction,
+        what: char,
+    ) -> Option<Point2D<isize>> {
+        let mut current = position;
+        loop {
+            current = current.move_dir(direction, 1);
+            if !current.in_positive_range(self.map[0].len() as isize, self.map.len() as isize) {
+                return None;
+            }
+            if self[current] == what {
+                return Some(current);
+            }
+        }
+    }
+}
+
+impl<V> Index<Point2D<usize>> for MapVector<V> {
+    type Output = V;
+
+    fn index(&self, index: Point2D<usize>) -> &Self::Output {
+        self.map.get(index.y).unwrap().get(index.x).unwrap()
+    }
+}
+
+impl<V> IndexMut<Point2D<usize>> for MapVector<V> {
+    fn index_mut(&mut self, index: Point2D<usize>) -> &mut Self::Output {
+        self.map.get_mut(index.y).unwrap().get_mut(index.x).unwrap()
+    }
+}
+
+impl<V> Index<Point2D<isize>> for MapVector<V> {
+    type Output = V;
+
+    fn index(&self, index: Point2D<isize>) -> &Self::Output {
+        self.map
+            .get(index.y as usize)
+            .unwrap()
+            .get(index.x as usize)
+            .unwrap()
+    }
+}
+
+impl<V> IndexMut<Point2D<isize>> for MapVector<V> {
+    fn index_mut(&mut self, index: Point2D<isize>) -> &mut Self::Output {
+        self.map
+            .get_mut(index.y as usize)
+            .unwrap()
+            .get_mut(index.x as usize)
+            .unwrap()
     }
 }
 
