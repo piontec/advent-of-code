@@ -31,21 +31,21 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        todo!()
+        vec![11387]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(850435817339)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(104824810233437)
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         let res = lines
             .iter()
-            .map(|l| can_match(l))
+            .map(|l| can_match(l, false))
             .filter(|r| r.is_some())
             .map(|r| r.unwrap())
             .sum();
@@ -53,11 +53,17 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
+        let res = lines
+            .iter()
+            .map(|l| can_match(l, true))
+            .filter(|r| r.is_some())
+            .map(|r| r.unwrap())
+            .sum();
+        res
     }
 }
 
-fn can_match(line: &str) -> Option<i64> {
+fn can_match(line: &str, use_concat: bool) -> Option<i64> {
     let mut parts = line.split(':');
     let wanted = parts.next().unwrap().parse::<i64>().unwrap();
     let nums = parts
@@ -67,26 +73,33 @@ fn can_match(line: &str) -> Option<i64> {
         .split(' ')
         .map(|n| n.parse::<i64>().unwrap())
         .collect::<Vec<i64>>();
-    if eval(wanted, 0, &nums, Op::Add) || eval(wanted, 1, &nums, Op::Mul) {
+    if eval(wanted, 0, &nums, Op::Add, use_concat)
+        || eval(wanted, 1, &nums, Op::Mul, use_concat)
+        || (use_concat && eval(wanted, 1, &nums, Op::Concat, use_concat))
+    {
         Some(wanted)
     } else {
         None
     }
 }
 
-fn eval(target: i64, left: i64, rest: &[i64], op: Op) -> bool {
+fn eval(target: i64, left: i64, rest: &[i64], op: Op, use_concat: bool) -> bool {
     if rest.is_empty() {
         return left == target;
     }
     let next_left = match op {
         Op::Add => left + rest[0],
         Op::Mul => left * rest[0],
+        Op::Concat => format!("{}{}", left, rest[0]).parse::<i64>().unwrap(),
     };
     let rest = &rest[1..];
-    eval(target, next_left, rest, Op::Add) || eval(target, next_left, rest, Op::Mul)
+    eval(target, next_left, rest, Op::Add, use_concat)
+        || eval(target, next_left, rest, Op::Mul, use_concat)
+        || (use_concat && eval(target, next_left, rest, Op::Concat, use_concat))
 }
 
 enum Op {
     Add,
     Mul,
+    Concat,
 }
