@@ -21,7 +21,7 @@ mod d3;
 mod d4;
 mod d5;
 mod d6;
-// mod d7;
+mod d7;
 // mod d8;
 // mod d9;
 
@@ -106,8 +106,8 @@ fn main() {
     // d3::Task.main();
     // d4::Task.main();
     // d5::Task.main();
-    d6::Task.main();
-    // d7::Task.main();
+    // d6::Task.main();
+    d7::Task.main();
     // d8::Task.main();
     // d9::Task.main();
     // d10::Task.main();

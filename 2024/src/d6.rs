@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::{
     common::{Direction, MapVector, Point2D},
     DayTask,
@@ -52,8 +54,13 @@ impl DayTask<i64> for Task {
         assert!(starts.len() == 1);
         map[starts[0]] = '.';
         let start = Point2D::<isize>::new(starts[0].x as isize, starts[0].y as isize);
-        find_path(&mut map, &start, &Direction::North);
-        map.find('X').len() as i64
+        let path = find_path(&mut map, &start, &Direction::North);
+        let visited = match path {
+            Result::NoLoop(visited) => visited,
+            _ => panic!("Unexpected"),
+        };
+        let res = visited.iter().map(|(point, _)| point).unique().count();
+        res as i64
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -63,7 +70,7 @@ impl DayTask<i64> for Task {
         map[starts[0]] = '.';
         let mut current = Point2D::<isize>::new(starts[0].x as isize, starts[0].y as isize);
         let mut dir = Direction::North;
-        let mut loop_counter = 0;
+        let mut loops: Vec<Path> = vec![];
         loop {
             let next = current.move_dir(dir, 1);
             // if we're outside map boundaries - end the loop;
@@ -72,7 +79,7 @@ impl DayTask<i64> for Task {
                 || next.y >= map.map.len() as isize
                 || next.x >= map.map[0].len() as isize
             {
-                return loop_counter;
+                return loops.len() as i64;
             }
             if map[next] == '#' {
                 dir = dir.turn_cw();
@@ -80,29 +87,32 @@ impl DayTask<i64> for Task {
             }
             let maybe_dir = dir.turn_cw();
             if let Some(_) = map.find_in_front(current, maybe_dir, '#') {
-                let mut maybe_map = map.clone();
-                maybe_map[next] = '#';
-                if find_path(&mut maybe_map, &current, &dir) == Result::Loop {
-                    loop_counter += 1;
+                map[next] = '#';
+                if let Result::Loop(l) = find_path(&mut map, &current, &dir) {
+                    if !loops.contains(&l) {
+                        loops.push(l);
+                    }
                 }
+                map[next] = '.';
             }
             current = next;
         }
     }
 }
 
+type Path = HashSet<(Point2D<isize>, Direction)>;
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 enum Result {
-    Loop,
-    NoLoop,
+    Loop(Path),
+    NoLoop(Path),
 }
 
 fn find_path(map: &mut MapVector<char>, start: &Point2D<isize>, direction: &Direction) -> Result {
-    let mut visited: HashSet<(Point2D<isize>, Direction)> = HashSet::new();
+    let mut visited: Path = HashSet::new();
     let mut current = Point2D::<isize>::new(start.x, start.y);
     let mut dir = *direction;
     loop {
-        map[current] = 'X';
         visited.insert((current, dir));
         let next = current.move_dir(dir, 1);
         // if we're outside map boundaries - end the loop;
@@ -111,10 +121,10 @@ fn find_path(map: &mut MapVector<char>, start: &Point2D<isize>, direction: &Dire
             || next.y >= map.map.len() as isize
             || next.x >= map.map[0].len() as isize
         {
-            return Result::NoLoop;
+            return Result::NoLoop(visited);
         }
         if visited.contains(&(next, dir)) {
-            return Result::Loop;
+            return Result::Loop(visited);
         }
         if map[next] == '#' {
             dir = dir.turn_cw();
