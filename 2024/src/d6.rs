@@ -54,9 +54,12 @@ impl DayTask<i64> for Task {
         assert!(starts.len() == 1);
         map[starts[0]] = '.';
         let start = Point2D::<isize>::new(starts[0].x as isize, starts[0].y as isize);
-        let path = find_path(&mut map, &start, &Direction::North);
-        let visited = match path {
-            Result::NoLoop(visited) => visited,
+        let mut visited = HashSet::new();
+        let path = find_path(&mut map, &mut visited, &start, &Direction::North);
+        match path {
+            PathResult::NoLoop => {
+                // visited is already populated by find_path
+            }
             _ => panic!("Unexpected"),
         };
         let res = visited.iter().map(|(point, _)| point).unique().count();
@@ -70,32 +73,23 @@ impl DayTask<i64> for Task {
         map[starts[0]] = '.';
         let mut current = Point2D::<isize>::new(starts[0].x as isize, starts[0].y as isize);
         let mut dir = Direction::North;
-        let mut loops: Vec<Path> = vec![];
+        let mut visited = HashSet::new();
+        let mut obstacles: HashSet<Point2D<isize>> = HashSet::new();
         loop {
-            let next = current.move_dir(dir, 1);
+            visited.insert((current, dir));
+            let (next_pos, next_dir) = get_next_pos(&mut map, &current, &dir);
             // if we're outside map boundaries - end the loop;
-            if next.x < 0
-                || next.y < 0
-                || next.y >= map.map.len() as isize
-                || next.x >= map.map[0].len() as isize
-            {
-                return loops.len() as i64;
+            if !map.is_in_map(next_pos) {
+                return obstacles.iter().unique().count() as i64;
             }
-            if map[next] == '#' {
-                dir = dir.turn_cw();
-                continue;
+            map[next_pos] = '#';
+            let res = find_path(&mut map, &mut visited.clone(), &current, &dir);
+            if res == PathResult::Loop {
+                obstacles.insert(next_pos);
             }
-            let maybe_dir = dir.turn_cw();
-            if let Some(_) = map.find_in_front(current, maybe_dir, '#') {
-                map[next] = '#';
-                if let Result::Loop(l) = find_path(&mut map, &current, &dir) {
-                    if !loops.contains(&l) {
-                        loops.push(l);
-                    }
-                }
-                map[next] = '.';
-            }
-            current = next;
+            map[next_pos] = '.';
+            current = next_pos;
+            dir = next_dir;
         }
     }
 }
@@ -103,33 +97,48 @@ impl DayTask<i64> for Task {
 type Path = HashSet<(Point2D<isize>, Direction)>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-enum Result {
-    Loop(Path),
-    NoLoop(Path),
+enum PathResult {
+    Loop,
+    NoLoop,
 }
 
-fn find_path(map: &mut MapVector<char>, start: &Point2D<isize>, direction: &Direction) -> Result {
-    let mut visited: Path = HashSet::new();
+fn find_path(
+    map: &mut MapVector<char>,
+    visited: &mut Path,
+    start: &Point2D<isize>,
+    direction: &Direction,
+) -> PathResult {
     let mut current = Point2D::<isize>::new(start.x, start.y);
     let mut dir = *direction;
     loop {
         visited.insert((current, dir));
-        let next = current.move_dir(dir, 1);
+        let (next, new_dir) = get_next_pos(map, &current, &dir);
         // if we're outside map boundaries - end the loop;
-        if next.x < 0
-            || next.y < 0
-            || next.y >= map.map.len() as isize
-            || next.x >= map.map[0].len() as isize
-        {
-            return Result::NoLoop(visited);
+        if !map.is_in_map(next) {
+            return PathResult::NoLoop;
         }
-        if visited.contains(&(next, dir)) {
-            return Result::Loop(visited);
-        }
-        if map[next] == '#' {
-            dir = dir.turn_cw();
-            continue;
+        if visited.contains(&(next, new_dir)) {
+            return PathResult::Loop;
         }
         current = next;
+        dir = new_dir;
     }
+}
+
+fn get_next_pos(
+    map: &mut MapVector<char>,
+    current: &Point2D<isize>,
+    dir: &Direction,
+) -> (Point2D<isize>, Direction) {
+    let mut next = current.move_dir(*dir, 1);
+    let mut new_dir = *dir;
+    loop {
+        if map.is_in_map(next) && map[next] == '#' {
+            new_dir = new_dir.turn_cw();
+            next = current.move_dir(new_dir, 1);
+        } else {
+            break;
+        }
+    }
+    return (next, new_dir);
 }

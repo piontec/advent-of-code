@@ -240,6 +240,13 @@ impl MapVector<char> {
         Self { map }
     }
 
+    pub fn is_in_map(&self, position: Point2D<isize>) -> bool {
+        return position.x >= 0
+            && position.y >= 0
+            && position.y < self.map.len() as isize
+            && position.x < self.map[0].len() as isize;
+    }
+
     pub fn find(&self, c: char) -> Vec<Point2D<usize>> {
         let mut res = vec![];
         for y in 0..self.map.len() {
