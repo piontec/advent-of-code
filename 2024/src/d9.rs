@@ -63,21 +63,52 @@ impl DayTask<i64> for Task {
             while sectors[right_index] == -1 {
                 right_index -= 1;
             }
+            if right_index == 0 {
+                // no more files to process
+                break;
+            }
             let file_id = sectors[right_index];
             let file_end = right_index;
             while sectors[right_index] == file_id {
-                right_index -= 1;
+                if right_index > 0 {
+                    right_index -= 1;
+                } else {
+                    break;
+                }
             }
-            let file_len = file_end - right_index;
+            let file_start = if right_index == 0 { 0 } else { right_index + 1 };
+            let file_len = file_end - file_start + 1;
             // go from the left and check if we can find space to fit it
             let mut left_index = 0;
             loop {
+                if left_index >= file_start {
+                    // no space found for this file
+                    break;
+                }
                 while sectors[left_index] != -1 {
                     left_index += 1;
                 }
                 let empty_start = left_index;
                 while sectors[left_index] == -1 {
-                    left_index += 1;
+                    if left_index < sectors.len() - 1 {
+                        left_index += 1;
+                    } else {
+                        break;
+                    }
+                }
+                let empty_end = if left_index == sectors.len() - 1 {
+                    sectors.len() - 1
+                } else {
+                    left_index - 1
+                };
+                let empty_len = empty_end - empty_start + 1;
+                if empty_len >= file_len && empty_start < file_start {
+                    // we can fit the file here
+                    for i in 0..file_len {
+                        sectors[empty_start + i] = file_id;
+                        sectors[file_start + i] = -1;
+                    }
+                    break;
                 }
             }
 
@@ -86,7 +117,7 @@ impl DayTask<i64> for Task {
                 break;
             }
         }
-        todo!()
+        checksum(sectors)
     }
 }
 
