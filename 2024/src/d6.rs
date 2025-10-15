@@ -49,7 +49,7 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
-        let mut map = MapVector::new(lines);
+        let mut map = MapVector::new(lines, |c| c);
         let starts = map.find('^');
         assert!(starts.len() == 1);
         map[starts[0]] = '.';
@@ -67,7 +67,7 @@ impl DayTask<i64> for Task {
     }
 
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        let mut map = MapVector::new(lines);
+        let mut map = MapVector::new(lines, |c| c);
         let starts = map.find('^');
         assert!(starts.len() == 1);
         map[starts[0]] = '.';

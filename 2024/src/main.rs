@@ -1,6 +1,6 @@
 pub mod common;
 mod d1;
-// mod d10;
+mod d10;
 // mod d11;
 // mod d12;
 // mod d13;
@@ -109,8 +109,8 @@ fn main() {
     // d6::Task.main();
     // d7::Task.main();
     // d8::Task.main();
-    d9::Task.main();
-    // d10::Task.main();
+    // d9::Task.main();
+    d10::Task.main();
     // d11::Task.main();
     // d12::Task.main();
     // d13::Task.main();

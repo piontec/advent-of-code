@@ -1,10 +1,8 @@
 use std::{
     collections::HashMap,
     ops::{Add, AddAssign, Index, IndexMut, Sub, SubAssign},
-    slice::SliceIndex,
 };
 
-use itertools::Position;
 use num::{Num, Signed};
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -231,12 +229,15 @@ pub struct MapVector<V> {
     pub map: Vec<Vec<V>>,
 }
 
-impl MapVector<char> {
-    pub fn new(lines: &Vec<String>) -> Self {
+impl<V> MapVector<V> {
+    pub fn new<F>(lines: &Vec<String>, convert: F) -> Self
+    where
+        F: Fn(char) -> V,
+    {
         let map = lines
             .iter()
-            .map(|line| line.chars().collect::<Vec<char>>())
-            .collect::<Vec<Vec<char>>>();
+            .map(|line| line.chars().map(|c| convert(c)).collect::<Vec<V>>())
+            .collect::<Vec<Vec<V>>>();
         Self { map }
     }
 
@@ -247,12 +248,15 @@ impl MapVector<char> {
             && position.x < self.map[0].len() as isize;
     }
 
-    pub fn find(&self, c: char) -> Vec<Point2D<usize>> {
+    pub fn find(&self, what: V) -> Vec<Point2D<isize>>
+    where
+        V: PartialEq + Copy,
+    {
         let mut res = vec![];
         for y in 0..self.map.len() {
             for x in 0..self.map[y].len() {
-                if self.map[y][x] == c {
-                    res.push(Point2D::new(x, y));
+                if self.map[y][x] == what {
+                    res.push(Point2D::new(x as isize, y as isize));
                 }
             }
         }
@@ -263,8 +267,11 @@ impl MapVector<char> {
         &self,
         position: Point2D<isize>,
         direction: Direction,
-        what: char,
-    ) -> Option<Point2D<isize>> {
+        what: V,
+    ) -> Option<Point2D<isize>>
+    where
+        V: PartialEq + Copy,
+    {
         let mut current = position;
         loop {
             current = current.move_dir(direction, 1);
@@ -275,6 +282,25 @@ impl MapVector<char> {
                 return Some(current);
             }
         }
+    }
+
+    pub fn get_neighbors_pos<F>(&self, pos: &Point2D<isize>, mut filter: F) -> Vec<Point2D<isize>>
+    where
+        F: FnMut(&Point2D<isize>) -> bool,
+    {
+        let mut res = vec![];
+        for direction in [
+            Direction::North,
+            Direction::East,
+            Direction::South,
+            Direction::West,
+        ] {
+            let new_pos = pos.move_dir(direction, 1);
+            if self.is_in_map(new_pos) && filter(&new_pos) {
+                res.push(new_pos);
+            }
+        }
+        res
     }
 }
 
