@@ -14,6 +14,8 @@ where
     pub y: T,
 }
 
+pub type Path<T> = Vec<Point2D<T>>;
+
 impl<T> Point2D<T>
 where
     T: Num + Copy + Eq + Ord,

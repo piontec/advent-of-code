@@ -1,5 +1,5 @@
 use crate::{
-    common::{MapVector, Point2D},
+    common::{MapVector, Point2D, Path},
     DayTask,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -33,40 +33,51 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        vec![]
+        vec![81]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(744)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(1651)
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
-        let map: MapVector<i8> = MapVector::new(lines, |c| (c.to_digit(10).unwrap()) as i8);
-        let starts = map.find(0);
-        starts.iter().map(|start| get_quality(&map, start)).sum()
+        run(lines, true)
     }
 
-    fn run_p2(&self, _lines: &Vec<String>, _: bool) -> i64 {
-        0
+    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
+        run(lines, false)
     }
+
 }
 
-fn get_quality(map: &MapVector<i8>, start: &Point2D<isize>) -> i64 {
+fn run(lines: &Vec<String>, unique: bool) -> i64 {
+    let map: MapVector<i8> = MapVector::new(lines, |c| (c.to_digit(10).unwrap()) as i8);
+    let starts = map.find(0);
+    starts.iter().map(|start| get_quality(&map, start, unique)).sum()
+}
+
+fn get_quality(map: &MapVector<i8>, start: &Point2D<isize>, unique: bool) -> i64 {
     let pos = *start;
-    let mut res: HashSet<Point2D<isize>> = HashSet::new();
+    let mut res: Vec<Point2D<isize>> = vec![];
     let mut queue = VecDeque::new();
     queue.push_back(pos);
     while let Some(pos) = queue.pop_front() {
-        if map[pos] == 9i8 {
-            res.insert(pos);
+        if map[pos] == 9 {
+            res.push(pos);
             continue;
         }
-        let neighbors = map.get_neighbors_pos(&pos, |p| map[*p] == map[pos] + 1i8);
+        let neighbors = map.get_neighbors_pos(&pos, |p| map[*p] == map[pos] + 1);
         queue.extend(neighbors);
     }
-    res.len() as i64
+    if unique {
+    let mut unique_res: HashSet<Point2D<isize>> = HashSet::new();
+    unique_res.extend(res.iter().collect::<HashSet<&Point2D<isize>>>());
+    unique_res.len() as i64
+    } else {
+        res.len() as i64
+    }
 }
