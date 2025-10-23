@@ -304,6 +304,21 @@ impl<V> MapVector<V> {
         }
         res
     }
+
+    pub fn get_neighbors<F>(&self, pos: &Point2D<isize>, filter: F) -> Vec<V>
+    where
+        F: FnMut(&Point2D<isize>) -> bool,
+        V: Copy,
+    {
+        self.get_neighbors_pos(pos, filter)
+            .iter()
+            .map(|&p| self[p])
+            .collect()
+    }
+
+    pub fn get_size(&self) -> Point2D<usize> {
+        Point2D::new(self.map[0].len(), self.map.len())
+    }
 }
 
 impl<V> Index<Point2D<usize>> for MapVector<V> {
