@@ -1,5 +1,4 @@
 use crate::{common::Point2D, DayTask};
-use std::collections::HashMap;
 
 pub struct Task;
 
@@ -34,7 +33,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        todo!()
+        vec![1]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -42,7 +41,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(7861)
     }
 
     fn run_p1(&self, lines: &Vec<String>, is_test: bool) -> i64 {
@@ -54,8 +53,13 @@ impl DayTask<i64> for Task {
         }
     }
 
-    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
-        todo!()
+    fn run_p2(&self, lines: &Vec<String>, is_test: bool) -> i64 {
+        let mut bots = parse_bots(lines);
+        if is_test {
+            1
+        } else {
+            find_christmas_tree(&mut bots, 101, 103)
+        }
     }
 }
 
@@ -94,6 +98,53 @@ fn get_safety_factor(bots: &mut [Bot], width: i64, height: i64, iterations: i32)
         }
     }
     ul_count * ur_count * ll_count * lr_count
+}
+
+fn find_christmas_tree(bots: &mut [Bot], width: i64, height: i64) -> i64 {
+    let mut iters = 0;
+    loop {
+        for bot in &mut *bots {
+            let mut new_x = bot.position.x;
+            let mut new_y = bot.position.y;
+            new_x = (new_x + bot.velocity.x) % width;
+            if new_x < 0 {
+                new_x += width;
+            }
+            new_y = (new_y + bot.velocity.y) % height;
+            if new_y < 0 {
+                new_y += height;
+            }
+            bot.position.x = new_x;
+            bot.position.y = new_y;
+        }
+
+        for y in 0..height {
+            let mut row = ".".repeat(width as usize);
+            for bot in bots.iter() {
+                if bot.position.y == y {
+                    row.replace_range(bot.position.x as usize..bot.position.x as usize + 1, "#");
+                }
+            }
+            if row.contains("####################") {
+                print_tree(bots, width, height);
+                return iters + 1;
+            }
+        }
+
+        iters += 1;
+    }
+}
+
+fn print_tree(bots: &[Bot], width: i64, height: i64) {
+    for y in 0..height {
+        let mut row = ".".repeat(width as usize);
+        for bot in bots.iter() {
+            if bot.position.y == y {
+                row.replace_range(bot.position.x as usize..bot.position.x as usize + 1, "#");
+            }
+        }
+        println!("{}", row);
+    }
 }
 
 struct Bot {
