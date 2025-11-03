@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt,
     ops::{Add, AddAssign, Index, IndexMut, Sub, SubAssign},
 };
 
@@ -166,6 +167,15 @@ impl Direction {
             Direction::East => Direction::North,
         }
     }
+
+    pub fn opposite(&self) -> Direction {
+        match self {
+            Direction::North => Direction::South,
+            Direction::West => Direction::East,
+            Direction::South => Direction::North,
+            Direction::East => Direction::West,
+        }
+    }
 }
 
 pub fn transpose<T: Clone>(array2d: &Vec<Vec<T>>) -> Vec<Vec<T>> {
@@ -226,7 +236,7 @@ impl MapHashMap<i32, char> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct MapVector<V> {
     pub map: Vec<Vec<V>>,
 }
@@ -318,6 +328,25 @@ impl<V> MapVector<V> {
 
     pub fn get_size(&self) -> Point2D<usize> {
         Point2D::new(self.map[0].len(), self.map.len())
+    }
+}
+
+impl<V> fmt::Debug for MapVector<V>
+where
+    V: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for y in 0..self.map.len() {
+            for x in 0..self.map[y].len() {
+                if let Err(err) = write!(f, "{}", self.map[y][x]) {
+                    return Err(err);
+                }
+            }
+            if let Err(err) = write!(f, "\n") {
+                return Err(err);
+            }
+        }
+        Ok(())
     }
 }
 
