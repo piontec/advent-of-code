@@ -23,7 +23,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        todo!()
+        vec![-1]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -31,46 +31,44 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        None
+        Some(218817038947400)
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
         run(lines, 25)
     }
 
-    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _is_test: bool) -> i64 {
+        if _is_test {
+            return -1;
+        }
         run(lines, 75)
     }
 }
 
 fn run(lines: &Vec<String>, iter: i8) -> i64 {
-    let nums = lines[0].split(' ').map(|n| n.parse::<i64>().unwrap()).collect::<Vec<i64>>();
-    let mut stones = VecDeque::from(nums);
-    for i in 0..iter {
-        println!("Iter {i}");
-        blink(&mut stones);
-    }
-    stones.len() as i64
+    let nums = lines[0]
+        .split(' ')
+        .map(|n| n.parse::<i64>().unwrap())
+        .collect::<Vec<i64>>();
+    nums.iter().map(|n| count_stones(*n, iter)).sum()
 }
 
-fn blink(stones: &mut VecDeque<i64>) {
-    let mut stone_index = 0;
-    while stone_index< stones.len() {
-        let stone_str = stones[stone_index].to_string();
-        if stones[stone_index] == 0{
-            stones[stone_index] = 1;
-        }
-        else if stone_str.len() % 2 == 0 {
-            let high = stone_str[0..stone_str.len() / 2].parse::<i64>().unwrap();
-            let low = stone_str[stone_str.len() / 2..].parse::<i64>().unwrap();
-            stones[stone_index] = high;
-            stones.insert(stone_index + 1, low);
-            stone_index += 1;
-        }
-        else {
-            stones[stone_index] *= 2024;
-        }
-        stone_index += 1;
+#[memoize::memoize]
+fn count_stones(n: i64, iter: i8) -> i64 {
+    if iter == 0 {
+        return 1;
     }
-}
 
+    if n == 0 {
+        return count_stones(1, iter - 1);
+    }
+
+    let stone_str = n.to_string();
+    if stone_str.len() % 2 == 0 {
+        let high = stone_str[0..stone_str.len() / 2].parse::<i64>().unwrap();
+        let low = stone_str[stone_str.len() / 2..].parse::<i64>().unwrap();
+        return count_stones(high, iter - 1) + count_stones(low, iter - 1);
+    }
+    count_stones(n * 2024, iter - 1)
+}
