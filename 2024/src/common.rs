@@ -216,6 +216,17 @@ where
     }
 }
 
+impl<K: Num, V> Index<&Point2D<K>> for MapHashMap<K, V>
+where
+    K: Eq + std::hash::Hash,
+{
+    type Output = V;
+
+    fn index(&self, index: &Point2D<K>) -> &Self::Output {
+        self.map.get(index).unwrap()
+    }
+}
+
 impl MapHashMap<i32, char> {
     pub fn parse_map(lines: &Vec<String>) -> Self {
         let mut map = Self::new();
@@ -358,8 +369,22 @@ impl<V> Index<Point2D<usize>> for MapVector<V> {
     }
 }
 
+impl<V> Index<&Point2D<usize>> for MapVector<V> {
+    type Output = V;
+
+    fn index(&self, index: &Point2D<usize>) -> &Self::Output {
+        self.map.get(index.y).unwrap().get(index.x).unwrap()
+    }
+}
+
 impl<V> IndexMut<Point2D<usize>> for MapVector<V> {
     fn index_mut(&mut self, index: Point2D<usize>) -> &mut Self::Output {
+        self.map.get_mut(index.y).unwrap().get_mut(index.x).unwrap()
+    }
+}
+
+impl<V> IndexMut<&Point2D<usize>> for MapVector<V> {
+    fn index_mut(&mut self, index: &Point2D<usize>) -> &mut Self::Output {
         self.map.get_mut(index.y).unwrap().get_mut(index.x).unwrap()
     }
 }
@@ -378,6 +403,28 @@ impl<V> Index<Point2D<isize>> for MapVector<V> {
 
 impl<V> IndexMut<Point2D<isize>> for MapVector<V> {
     fn index_mut(&mut self, index: Point2D<isize>) -> &mut Self::Output {
+        self.map
+            .get_mut(index.y as usize)
+            .unwrap()
+            .get_mut(index.x as usize)
+            .unwrap()
+    }
+}
+
+impl<V> Index<&Point2D<isize>> for MapVector<V> {
+    type Output = V;
+
+    fn index(&self, index: &Point2D<isize>) -> &Self::Output {
+        self.map
+            .get(index.y as usize)
+            .unwrap()
+            .get(index.x as usize)
+            .unwrap()
+    }
+}
+
+impl<V> IndexMut<&Point2D<isize>> for MapVector<V> {
+    fn index_mut(&mut self, index: &Point2D<isize>) -> &mut Self::Output {
         self.map
             .get_mut(index.y as usize)
             .unwrap()
