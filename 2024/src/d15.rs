@@ -2,7 +2,6 @@ use crate::{
     common::{Direction, MapVector, Point2D},
     DayTask,
 };
-use std::collections::HashMap;
 
 pub struct Task;
 
@@ -75,7 +74,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_result(&self) -> Option<i64> {
-        todo!()
+        Some(1337648)
     }
 
     fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
@@ -87,7 +86,6 @@ impl DayTask<i64> for Task {
     fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
         let (start_pos, mut map, moves) = parse(lines, true);
         do_moves(&mut map, &start_pos, &moves, true);
-        print!("{:?}", map);
         calc_res(&map, '[')
     }
 }
@@ -99,12 +97,6 @@ fn calc_res(map: &MapVector<char>, shape: char) -> i64 {
         .sum()
 }
 
-fn print_map(map: &mut MapVector<char>, robot_pos: &Point2D<isize>) {
-    map[robot_pos] = '@';
-    println!("{:?}", map);
-    map[robot_pos] = '.';
-}
-
 fn do_moves(
     map: &mut MapVector<char>,
     start_pos: &Point2D<isize>,
@@ -113,9 +105,6 @@ fn do_moves(
 ) {
     let mut robot_pos = start_pos.clone();
     for &m in moves {
-        print_map(map, &robot_pos);
-        print!("move: {}\n", m);
-
         let dir = match m {
             '^' => Direction::North,
             'v' => Direction::South,
@@ -137,14 +126,14 @@ fn do_moves(
         }
         if big_boxes {
             let moved = try_move_big_box(map, next_pos, dir);
-            if moved > 0 && moved <= 3 {
+            if moved {
                 robot_pos = next_pos;
             }
         }
     }
 }
 
-fn try_move_big_box(map: &mut MapVector<char>, pos: Point2D<isize>, dir: Direction) -> u8 {
+fn try_move_big_box(map: &mut MapVector<char>, pos: Point2D<isize>, dir: Direction) -> bool {
     let left_pos = if map[pos] == '[' {
         pos
     } else {
@@ -155,67 +144,57 @@ fn try_move_big_box(map: &mut MapVector<char>, pos: Point2D<isize>, dir: Directi
     } else {
         pos.move_dir(Direction::East, 1)
     };
+
+    if !can_move_big_box_check(map, left_pos, right_pos, dir) {
+        return false;
+    }
+
+    do_move_big_box(map, left_pos, right_pos, dir);
+    return true;
+}
+
+fn can_move_big_box_check(
+    map: &MapVector<char>,
+    left_pos: Point2D<isize>,
+    right_pos: Point2D<isize>,
+    dir: Direction,
+) -> bool {
     let new_left = left_pos.move_dir(dir, 1);
     let new_right = right_pos.move_dir(dir, 1);
+
     if dir == Direction::North || dir == Direction::South {
         if map[new_left] == '#' || map[new_right] == '#' {
-            return 0;
+            return false;
         }
         if map[new_left] == '.' && map[new_right] == '.' {
-            map[new_left] = map[left_pos];
-            map[new_right] = map[right_pos];
-            map[left_pos] = '.';
-            map[right_pos] = '.';
-            return 1;
+            return true;
         }
 
         if map[new_left] == '[' && map[new_right] == ']' {
-            let so_far = try_move_big_box(map, new_left, dir);
-            if so_far == 0 || so_far >= 3 {
-                return 0;
-            }
-            map[new_left] = map[left_pos];
-            map[new_right] = map[right_pos];
-            map[left_pos] = '.';
-            map[right_pos] = '.';
-            return so_far + 1;
+            return can_move_big_box_check(map, new_left, new_right, dir);
         }
         if map[new_left] == ']' && map[new_right] != '[' {
-            let left_so_far = try_move_big_box(map, new_left, dir);
-            if left_so_far == 0 || left_so_far >= 3 {
-                return 0;
-            }
-            map[new_left] = map[left_pos];
-            map[new_right] = map[right_pos];
-            map[left_pos] = '.';
-            map[right_pos] = '.';
-            return left_so_far + 1;
+            let actual_left = new_left.move_dir(Direction::West, 1);
+            return can_move_big_box_check(map, actual_left, new_left, dir);
         }
         if map[new_left] != ']' && map[new_right] == '[' {
-            let right_so_far = try_move_big_box(map, new_right, dir);
-            if right_so_far == 0 || right_so_far >= 3 {
-                return 0;
-            }
-            map[new_left] = map[left_pos];
-            map[new_right] = map[right_pos];
-            map[left_pos] = '.';
-            map[right_pos] = '.';
-            return right_so_far + 1;
+            let actual_right = new_right.move_dir(Direction::East, 1);
+            return can_move_big_box_check(map, new_right, actual_right, dir);
         }
         // last case: two different boxes blocking
-        let left_so_far = try_move_big_box(map, new_left, dir);
-        let right_so_far = try_move_big_box(map, new_right, dir);
-        if left_so_far > 0 && right_so_far > 0 {
-            if left_so_far + right_so_far >= 3 {
-                return 0;
-            }
-            map[new_left] = map[left_pos];
-            map[new_right] = map[right_pos];
-            map[left_pos] = '.';
-            map[right_pos] = '.';
-            return left_so_far + right_so_far + 1;
-        }
-        return 0;
+        let left_can_move = if map[new_left] == ']' {
+            let actual_left = new_left.move_dir(Direction::West, 1);
+            can_move_big_box_check(map, actual_left, new_left, dir)
+        } else {
+            true
+        };
+        let right_can_move = if map[new_right] == '[' {
+            let actual_right = new_right.move_dir(Direction::East, 1);
+            can_move_big_box_check(map, new_right, actual_right, dir)
+        } else {
+            true
+        };
+        return left_can_move && right_can_move;
     } else {
         // moving left/right
         let next_to_side = if dir == Direction::West {
@@ -224,25 +203,88 @@ fn try_move_big_box(map: &mut MapVector<char>, pos: Point2D<isize>, dir: Directi
             new_right
         };
         if map[next_to_side] == '#' {
-            return 0;
+            return false;
         }
         if map[next_to_side] == '.' {
-            map[left_pos] = '.';
-            map[right_pos] = '.';
-            map[new_left] = '[';
-            map[new_right] = ']';
-            return 1;
+            return true;
         }
-        let so_far = try_move_big_box(map, next_to_side, dir);
-        if so_far == 0 || so_far >= 3 {
-            return 0;
-        }
-        map[left_pos] = '.';
-        map[right_pos] = '.';
-        map[new_left] = '[';
-        map[new_right] = ']';
-        return so_far + 1;
+        return can_move_big_box_check(
+            map,
+            if map[next_to_side] == '[' {
+                next_to_side
+            } else {
+                next_to_side.move_dir(Direction::West, 1)
+            },
+            if map[next_to_side] == ']' {
+                next_to_side
+            } else {
+                next_to_side.move_dir(Direction::East, 1)
+            },
+            dir,
+        );
     }
+}
+
+fn do_move_big_box(
+    map: &mut MapVector<char>,
+    left_pos: Point2D<isize>,
+    right_pos: Point2D<isize>,
+    dir: Direction,
+) {
+    let new_left = left_pos.move_dir(dir, 1);
+    let new_right = right_pos.move_dir(dir, 1);
+
+    if dir == Direction::North || dir == Direction::South {
+        if map[new_left] == '[' && map[new_right] == ']' {
+            do_move_big_box(map, new_left, new_right, dir);
+        }
+        if map[new_left] == ']' && map[new_right] != '[' {
+            let actual_left = new_left.move_dir(Direction::West, 1);
+            do_move_big_box(map, actual_left, new_left, dir);
+        }
+        if map[new_left] != ']' && map[new_right] == '[' {
+            let actual_right = new_right.move_dir(Direction::East, 1);
+            do_move_big_box(map, new_right, actual_right, dir);
+        }
+        // last case: two different boxes blocking
+        if map[new_left] == ']' {
+            let actual_left = new_left.move_dir(Direction::West, 1);
+            do_move_big_box(map, actual_left, new_left, dir);
+        }
+        if map[new_right] == '[' {
+            let actual_right = new_right.move_dir(Direction::East, 1);
+            do_move_big_box(map, new_right, actual_right, dir);
+        }
+    } else {
+        // moving left/right
+        let next_to_side = if dir == Direction::West {
+            new_left
+        } else {
+            new_right
+        };
+        if map[next_to_side] != '.' {
+            do_move_big_box(
+                map,
+                if map[next_to_side] == '[' {
+                    next_to_side
+                } else {
+                    next_to_side.move_dir(Direction::West, 1)
+                },
+                if map[next_to_side] == ']' {
+                    next_to_side
+                } else {
+                    next_to_side.move_dir(Direction::East, 1)
+                },
+                dir,
+            );
+        }
+    }
+
+    // Move current box
+    map[left_pos] = '.';
+    map[right_pos] = '.';
+    map[new_left] = '[';
+    map[new_right] = ']';
 }
 
 fn try_move_box(map: &mut MapVector<char>, pos: Point2D<isize>, dir: Direction) -> bool {
