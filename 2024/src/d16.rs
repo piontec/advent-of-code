@@ -93,14 +93,13 @@ fn find_shortest_path(
 ) -> i64 {
     use crate::common::{Direction, Point2D};
     use std::cmp::Ordering;
-    use std::collections::{BinaryHeap, HashSet};
+    use std::collections::{BinaryHeap, HashMap, HashSet};
 
     #[derive(Eq, PartialEq, Clone, Debug, Hash)]
     struct State {
         cost: i64,
         pos: Point2D<isize>,
         dir: Direction,
-        path: Vec<Point2D<isize>>,
     }
     impl Ord for State {
         fn cmp(&self, other: &Self) -> Ordering {
@@ -113,57 +112,55 @@ fn find_shortest_path(
         }
     }
 
-    let mut to_check = BinaryHeap::new();
-    let mut visited = HashSet::new();
-    let mut shortest_cost = None;
-    let mut all_paths = Vec::new();
+    let mut heap = BinaryHeap::new();
+    let mut visited: HashMap<(Point2D<isize>, Direction), i64> = HashMap::new();
+    let mut predecessors: HashMap<(Point2D<isize>, Direction), Vec<(Point2D<isize>, Direction)>> =
+        HashMap::new();
+    let mut min_cost = None;
     // Start at 'S', facing east
-    to_check.push(State {
+    heap.push(State {
         cost: 0,
         pos: start,
         dir: Direction::East,
-        path: vec![start],
     });
 
-    while let Some(State {
-        cost,
-        pos,
-        dir,
-        path,
-    }) = to_check.pop()
-    {
-        if let Some(sc) = shortest_cost {
-            if find_all && cost > sc {
-                // Prune: only consider paths with cost <= shortest found
+    while let Some(State { cost, pos, dir }) = heap.pop() {
+        if pos == end {
+            if min_cost.is_none() {
+                min_cost = Some(cost);
+                if !find_all {
+                    return min_cost.unwrap();
+                }
+            }
+        }
+
+        if let Some(mc) = min_cost {
+            if cost > mc {
                 continue;
             }
         }
-        if pos == end {
-            if !find_all {
-                return cost;
+        let key = (pos, dir);
+        if let Some(&prev_cost) = visited.get(&key) {
+            // we got to a place we know but with higher cost - this can't be the best path
+            if cost > prev_cost {
+                continue;
             }
-            if shortest_cost.is_none() {
-                shortest_cost = Some(cost);
-            } else if cost == shortest_cost.unwrap() {
-                all_paths.push(path.clone());
-            }
-            continue;
         }
-        if !visited.insert((pos, dir)) {
-            continue;
-        }
+        visited.insert(key, cost);
 
         // Try to go straight
         let next_pos = pos.move_dir(dir, 1);
         if map.is_in_map(next_pos) && map[&next_pos] != '#' {
-            let mut new_path = path.clone();
-            new_path.push(next_pos);
-            to_check.push(State {
-                cost: cost + 1,
-                pos: next_pos,
-                dir,
-                path: new_path,
-            });
+            let next_key = (next_pos, dir);
+            let next_cost = cost + 1;
+            if visited.get(&next_key).map_or(true, |&c| next_cost <= c) {
+                heap.push(State {
+                    cost: next_cost,
+                    pos: next_pos,
+                    dir,
+                });
+                predecessors.entry(next_key).or_default().push(key);
+            }
         }
 
         // Try to turn left and right
@@ -171,27 +168,57 @@ fn find_shortest_path(
             let new_dir = turn(&dir);
             let next_pos = pos.move_dir(new_dir, 1);
             if map.is_in_map(next_pos) && map[&next_pos] != '#' {
-                let mut new_path = path.clone();
-                new_path.push(next_pos);
-                to_check.push(State {
-                    cost: cost + 1001,
-                    pos: next_pos,
-                    dir: new_dir,
-                    path: new_path,
-                });
+                let next_key = (next_pos, new_dir);
+                let next_cost = cost + 1001;
+                if visited.get(&next_key).map_or(true, |&c| next_cost <= c) {
+                    heap.push(State {
+                        cost: next_cost,
+                        pos: next_pos,
+                        dir: new_dir,
+                    });
+                    predecessors.entry(next_key).or_default().push(key);
+                }
             }
         }
     }
-    if find_all && shortest_cost.is_some() {
-        // Collect all unique tiles covered by all shortest paths
-        let mut unique_tiles = HashSet::new();
-        for path in all_paths {
-            for tile in path {
-                unique_tiles.insert(tile);
-            }
-        }
-        unique_tiles.len() as i64
-    } else {
+
+    // For all directions, collect all shortest paths to the end
+    let min = visited
+        .iter()
+        .filter(|((p, _), _)| *p == end)
+        .map(|(_, &c)| c)
+        .min();
+    if min.is_none() {
         panic!("No path found");
     }
+    let min_cost = min.unwrap();
+    let end_states: Vec<(Point2D<isize>, Direction)> = visited
+        .iter()
+        .filter(|((p, _), &c)| *p == end && c == min_cost)
+        .map(|(k, _)| *k)
+        .collect();
+
+    // Backtrack all shortest paths
+    let mut unique_tiles = HashSet::new();
+    for end_state in end_states {
+        // iterate through predecessors backwards until 'S' is found
+        // add all positions to unique_tiles
+        let mut stack = vec![end_state];
+        let mut seen = HashSet::new();
+        while let Some(state) = stack.pop() {
+            if !seen.insert(state) {
+                continue;
+            }
+            unique_tiles.insert(state.0);
+            if state.0 == start {
+                continue;
+            }
+            if let Some(preds) = predecessors.get(&state) {
+                for &pred in preds {
+                    stack.push(pred);
+                }
+            }
+        }
+    }
+    unique_tiles.len() as i64
 }
