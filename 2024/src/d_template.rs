@@ -34,11 +34,11 @@ impl DayTask<i64> for Task {
         None
     }
 
-    fn run_p1(&self, lines: &Vec<String>, _: bool) -> i64 {
+    fn run_p1(&self, lines: &Vec<String>, _is_test: bool) -> i64 {
         todo!()
     }
 
-    fn run_p2(&self, lines: &Vec<String>, _: bool) -> i64 {
+    fn run_p2(&self, lines: &Vec<String>, _is_test: bool) -> i64 {
         todo!()
     }
 }
