@@ -47,7 +47,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_input(&self) -> Vec<&'static str> {
-        vec![TI]
+        vec![TI, TI2]
     }
 
     fn get_part1_test_result(&self) -> Vec<i64> {
@@ -182,19 +182,9 @@ fn find_shortest_path(
         }
     }
 
-    // For all directions, collect all shortest paths to the end
-    let min = visited
-        .iter()
-        .filter(|((p, _), _)| *p == end)
-        .map(|(_, &c)| c)
-        .min();
-    if min.is_none() {
-        panic!("No path found");
-    }
-    let min_cost = min.unwrap();
     let end_states: Vec<(Point2D<isize>, Direction)> = visited
         .iter()
-        .filter(|((p, _), &c)| *p == end && c == min_cost)
+        .filter(|((p, _), &c)| *p == end && c == min_cost.unwrap())
         .map(|(k, _)| *k)
         .collect();
 
