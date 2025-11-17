@@ -153,13 +153,29 @@ fn find_shortest_path(
         if map.is_in_map(next_pos) && map[&next_pos] != '#' {
             let next_key = (next_pos, dir);
             let next_cost = cost + 1;
-            if visited.get(&next_key).map_or(true, |&c| next_cost <= c) {
+            let should_add = match visited.get(&next_key) {
+                None => true,
+                Some(&prev_cost) => next_cost <= prev_cost,
+            };
+            if should_add {
                 heap.push(State {
                     cost: next_cost,
                     pos: next_pos,
                     dir,
                 });
-                predecessors.entry(next_key).or_default().push(key);
+                // Only track predecessors for optimal paths
+                match visited.get(&next_key) {
+                    None => {
+                        predecessors.insert(next_key, vec![key]);
+                    }
+                    Some(&prev_cost) => {
+                        if next_cost < prev_cost {
+                            predecessors.insert(next_key, vec![key]);
+                        } else if next_cost == prev_cost {
+                            predecessors.entry(next_key).or_default().push(key);
+                        }
+                    }
+                }
             }
         }
 
@@ -170,13 +186,29 @@ fn find_shortest_path(
             if map.is_in_map(next_pos) && map[&next_pos] != '#' {
                 let next_key = (next_pos, new_dir);
                 let next_cost = cost + 1001;
-                if visited.get(&next_key).map_or(true, |&c| next_cost <= c) {
+                let should_add = match visited.get(&next_key) {
+                    None => true,
+                    Some(&prev_cost) => next_cost <= prev_cost,
+                };
+                if should_add {
                     heap.push(State {
                         cost: next_cost,
                         pos: next_pos,
                         dir: new_dir,
                     });
-                    predecessors.entry(next_key).or_default().push(key);
+                    // Only track predecessors for optimal paths
+                    match visited.get(&next_key) {
+                        None => {
+                            predecessors.insert(next_key, vec![key]);
+                        }
+                        Some(&prev_cost) => {
+                            if next_cost < prev_cost {
+                                predecessors.insert(next_key, vec![key]);
+                            } else if next_cost == prev_cost {
+                                predecessors.entry(next_key).or_default().push(key);
+                            }
+                        }
+                    }
                 }
             }
         }
