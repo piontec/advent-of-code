@@ -9,6 +9,18 @@ Register C: 0
 
 Program: 0,1,5,4,3,0";
 
+const TI2: &str = "Register A: 2024
+Register B: 0
+Register C: 0
+
+Program: 0,1,5,4,3,0";
+
+const TI3: &str = "Register A: 10
+Register B: 0
+Register C: 0
+
+Program: 5,0,5,1,5,4";
+
 struct CPU {
     a: i64,
     b: i64,
@@ -126,7 +138,7 @@ impl DayTask<String> for Task {
     }
 
     fn get_part1_test_input(&self) -> Vec<&'static str> {
-        vec![TI]
+        vec![TI, TI2, TI3]
     }
 
     fn get_part2_test_input(&self) -> Vec<&'static str> {
@@ -134,7 +146,11 @@ impl DayTask<String> for Task {
     }
 
     fn get_part1_test_result(&self) -> Vec<String> {
-        vec![String::from("4,6,3,5,6,3,5,2,1,0,")]
+        vec![
+            String::from("4,6,3,5,6,3,5,2,1,0,"),
+            String::from("4,2,5,6,7,7,7,7,3,1,0,"),
+            String::from("0,1,2,"),
+        ]
     }
 
     fn get_part2_test_result(&self) -> Vec<String> {
