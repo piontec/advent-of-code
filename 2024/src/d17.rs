@@ -158,7 +158,7 @@ impl DayTask<String> for Task {
     }
 
     fn get_part1_result(&self) -> Option<String> {
-        None
+        Some(String::from("7,4,2,0,5,0,5,3,7,"))
     }
 
     fn get_part2_result(&self) -> Option<String> {
@@ -168,7 +168,6 @@ impl DayTask<String> for Task {
     fn run_p1(&self, lines: &Vec<String>, _is_test: bool) -> String {
         let mut cpu = CPU::parse(lines.join("\n").as_str());
         cpu.run();
-        print!("{}", cpu.stdout);
         cpu.stdout
     }
 
