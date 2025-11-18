@@ -253,6 +253,14 @@ pub struct MapVector<V> {
 }
 
 impl<V> MapVector<V> {
+    pub fn empty(size: Point2D<usize>, value: V) -> Self
+    where
+        V: Clone,
+    {
+        let map = vec![vec![value.clone(); size.x]; size.y];
+        Self { map }
+    }
+
     pub fn new<F>(lines: &Vec<String>, convert: F) -> Self
     where
         F: Fn(char) -> V,
