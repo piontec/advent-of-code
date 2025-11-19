@@ -50,7 +50,7 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        todo!()
+        vec![20]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
@@ -71,8 +71,33 @@ impl DayTask<i64> for Task {
         solve(map)
     }
 
-    fn run_p2(&self, _lines: &Vec<String>, _is_test: bool) -> i64 {
-        todo!()
+    fn run_p2(&self, lines: &Vec<String>, _is_test: bool) -> i64 {
+        let size = if _is_test {
+            Point2D { x: 7, y: 7 }
+        } else {
+            Point2D { x: 71, y: 71 }
+        };
+
+        // Binary search to find the minimum bytes that blocks the path
+        let mut left = 0;
+        let mut right = lines.len();
+
+        while left < right {
+            let mid = (left + right) / 2;
+            let map = parse_input(lines, size, mid);
+
+            if solve(map) == -1 {
+                // Path is blocked, try with fewer bytes
+                right = mid;
+            } else {
+                // Path exists, try with more bytes
+                left = mid + 1;
+            }
+        }
+
+        // Return the index of the blocking byte (0-based, so subtract 1)
+        println!("** {} **", lines[left - 1].as_str());
+        (left - 1) as i64
     }
 }
 
