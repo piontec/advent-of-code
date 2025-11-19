@@ -31,11 +31,11 @@ impl DayTask<i64> for Task {
     }
 
     fn get_part2_test_result(&self) -> Vec<i64> {
-        todo!()
+        vec![16]
     }
 
     fn get_part1_result(&self) -> Option<i64> {
-        None
+        Some(340)
     }
 
     fn get_part2_result(&self) -> Option<i64> {
@@ -52,8 +52,14 @@ impl DayTask<i64> for Task {
         res
     }
 
-    fn run_p2(&self, _lines: &Vec<String>, _is_test: bool) -> i64 {
-        todo!()
+    fn run_p2(&self, lines: &Vec<String>, _is_test: bool) -> i64 {
+        let (towels, patterns) = parse_input(lines);
+
+        let res = patterns
+            .iter()
+            .map(|pattern| count_pattern(pattern.clone(), towels.clone()) as i64)
+            .sum();
+        res
     }
 }
 
@@ -88,4 +94,25 @@ fn check_pattern(pattern: String, towels: Vec<String>) -> Option<String> {
 
     // No towel matched as a prefix, or all recursive calls failed
     None
+}
+
+#[memoize::memoize]
+fn count_pattern(pattern: String, towels: Vec<String>) -> usize {
+    // Base case: if pattern is empty, we've successfully matched everything
+    if pattern.is_empty() {
+        return 1;
+    }
+
+    let mut res = 0;
+    // Try each towel as a potential prefix
+    for towel in &towels {
+        if pattern.starts_with(towel) {
+            // Remove the matched prefix and recursively check the remainder
+            let remaining = pattern[towel.len()..].to_string();
+            res += count_pattern(remaining, towels.clone());
+        }
+    }
+
+    // No towel matched as a prefix, or all recursive calls failed
+    res
 }
