@@ -22,7 +22,7 @@ echo "Downloading input file for day $DAY..."
 INPUT_URL="https://adventofcode.com/2024/day/$DAY/input"
 INPUT_FILE="d$DAY.txt"
 
-if curl -f -s "$INPUT_URL" -o "$INPUT_FILE"; then
+if curl -f "$INPUT_URL" -o "$INPUT_FILE"; then
 	echo "✓ Downloaded $INPUT_FILE"
 else
 	echo "✗ Failed to download input file from $INPUT_URL"
